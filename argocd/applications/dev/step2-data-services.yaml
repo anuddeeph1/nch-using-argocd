@@ -68,3 +68,14 @@ spec:
         - /spec/resources/requests/storage
         - /metadata/annotations
         - /metadata/labels
+    # Specifically ignore the problematic mongodb token
+    - group: v1
+      kind: Secret
+      name: mongodb-token-r7kff
+      jqPathExpressions:
+        - .
+    # Ignore all mongodb service account tokens (wildcard pattern)
+    - group: v1
+      kind: Secret
+      jqPathExpressions:
+        - 'select(.metadata.name | test("mongodb-token-.*"))'
