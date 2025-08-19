@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: nch-step5-configuration
+  name: nch-step5-configuration-dev
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "5"
@@ -18,12 +18,12 @@ spec:
       name: kustomize-build-with-helm
       env:
         - name: ENVIRONMENT
-          value: "dev"  # Change to "prod" for production
+          value: "dev"
         - name: SCRIPT_NAME
           value: "05-configuration.sh"
   destination:
     server: https://kubernetes.default.svc
-    namespace: nch-dev1  # Change to nch-pe for production
+    namespace: nch-dev1
   syncPolicy:
     # Manual sync for configuration step due to API calls
     syncOptions:

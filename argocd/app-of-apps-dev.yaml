@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nch-charts-app-of-apps-dev
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: nch-charts
+  source:
+    repoURL: https://github.com/anuddeeph1/nch-using-argocd.git
+    targetRevision: HEAD
+    path: argocd/applications/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: nch-charts
+  namespace: argocd
+spec:
+  description: NCH Charts Project
+  sourceRepos:
+  - 'https://github.com/anuddeeph1/nch-using-argocd.git'
+  destinations:
+  - namespace: 'nch-*'
+    server: https://kubernetes.default.svc
+  - namespace: argocd
+    server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  namespaceResourceWhitelist:
+  - group: '*'
+    kind: '*'

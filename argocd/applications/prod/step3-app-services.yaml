@@ -1,10 +1,10 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: nch-step4-load-balancer
+  name: nch-step3-app-services-prod
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "4"
+    argocd.argoproj.io/sync-wave: "3"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -16,20 +16,20 @@ spec:
     helm:
       valueFiles:
         - ../config/values/base.yaml
-        - ../config/values/environments/dev.yaml  # Change to prod.yaml for production
-        - ../config/values/steps/load-balancer.yaml
+        - ../config/values/environments/prod.yaml
+        - ../config/values/steps/app-services.yaml
       parameters:
         - name: prereq.enabled
           value: "false"
         - name: base.enabled
           value: "false"
         - name: others.enabled
-          value: "false"
-        - name: postreq.enabled
           value: "true"
+        - name: postreq.enabled
+          value: "false"
   destination:
     server: https://kubernetes.default.svc
-    namespace: nch-dev1  # Change to nch-pe for production
+    namespace: nch-pe
   syncPolicy:
     automated:
       prune: true
@@ -41,9 +41,14 @@ spec:
       backoff:
         duration: 5s
         factor: 2
-        maxDuration: 5m
+        maxDuration: 15m
   ignoreDifferences:
     - group: apps
       kind: Deployment
       jsonPointers:
+        - /spec/replicas
         - /spec/template/metadata/annotations/deployment.kubernetes.io~1revision
+    - group: v1
+      kind: Secret
+      jsonPointers:
+        - /data
