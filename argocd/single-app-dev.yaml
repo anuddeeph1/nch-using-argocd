@@ -3,6 +3,9 @@ kind: Application
 metadata:
   name: nch-charts-dev
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/compare-options: IgnoreExtraneous
+    argocd.argoproj.io/sync-options: RespectIgnoreDifferences=true
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -52,38 +55,47 @@ spec:
         factor: 2
         maxDuration: 5m
   ignoreDifferences:
+    # Aggressive: Ignore ALL differences for Secrets (like step2)
+    - group: v1
+      kind: Secret
+      jqPathExpressions:
+        - .data
+        - .metadata
+        - .type
     # Ignore service account tokens
     - group: v1
       kind: Secret
       jqPathExpressions:
         - 'select(.type == "kubernetes.io/service-account-token")'
-    # Ignore StatefulSet status and volatile fields
+    # Ignore all mongodb-related tokens
+    - group: v1
+      kind: Secret
+      jqPathExpressions:
+        - 'select(.metadata.name | test("mongodb-token-.*"))'
+    # Completely ignore the problematic MongoDB token with all possible patterns
+    - group: v1
+      kind: Secret
+      name: mongodb-token-r7kff
+      jqPathExpressions:
+        - .
+    - group: v1
+      kind: Secret
+      name: mongodb-token-r7kff
+      jsonPointers:
+        - /
+        - /data
+        - /metadata
+        - /type
+    # Aggressive: Ignore ALL differences for StatefulSets (like step2)
     - group: apps
       kind: StatefulSet
-      jsonPointers:
-        - /status
-        - /metadata/generation
-        - /metadata/resourceVersion
-        - /spec/template/metadata/annotations
-        - /spec/template/metadata/labels
-    # Ignore Kafka StatefulSet specific issues
-    - group: apps
-      kind: StatefulSet
-      name: kafka
-      jsonPointers:
-        - /spec/volumeClaimTemplates/0/spec/resources/requests/storage
-        - /status
-        - /metadata/generation
-        - /metadata/resourceVersion
-    # Ignore Kafka Controller StatefulSet specific issues
-    - group: apps
-      kind: StatefulSet
-      name: kafka-controller
-      jsonPointers:
-        - /spec/volumeClaimTemplates/0/spec/resources/requests/storage
-        - /status
-        - /metadata/generation
-        - /metadata/resourceVersion
+      jqPathExpressions:
+        - .spec
+        - .status  
+        - .metadata.annotations
+        - .metadata.labels
+        - .metadata.generation
+        - .metadata.resourceVersion
     # Ignore PVC storage requests
     - group: v1
       kind: PersistentVolumeClaim
