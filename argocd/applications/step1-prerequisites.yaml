@@ -10,7 +10,7 @@ metadata:
 spec:
   project: nch-charts
   source:
-    repoURL: https://github.com/your-org/nch-charts  # Replace with your repo URL
+    repoURL: https://github.com/anuddeeph1/nch-using-argocd.git
     targetRevision: HEAD
     path: nch-charts
     helm:
