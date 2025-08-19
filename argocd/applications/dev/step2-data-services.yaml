@@ -74,10 +74,8 @@ spec:
     - group: v1
       kind: Secret
       name: mongodb-token-r7kff
-      jqPathExpressions:
-        - .
-    # Ignore all mongodb service account tokens (wildcard pattern)
+    # Ignore all service account tokens
     - group: v1
       kind: Secret
       jqPathExpressions:
-        - 'select(.metadata.name | test("mongodb-token-.*"))'
+        - 'select(.type == "kubernetes.io/service-account-token")'
