@@ -27,17 +27,24 @@ spec:
           value: "true"
         - name: configuration.enabled
           value: "true"
+        - name: nirmata-services-chart.users.enabled
+          value: "true"
+        - name: nirmata-services-chart.security.enabled
+          value: "true"
   destination:
     server: https://kubernetes.default.svc
     namespace: nch-dev1
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
+    # Remove automated sync to troubleshoot
+    # automated:
+    #   prune: true
+    #   selfHeal: true
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
       - RespectIgnoreDifferences=true
+      - SkipDryRunOnMissingResource=true
+      - PrunePropagationPolicy=foreground
     retry:
       limit: 3
       backoff:
@@ -57,8 +64,29 @@ spec:
         - /status
         - /metadata/generation
         - /metadata/resourceVersion
+        - /spec/template/metadata/annotations
+        - /spec/template/metadata/labels
+    # Ignore Kafka StatefulSet specific issues
+    - group: apps
+      kind: StatefulSet
+      name: kafka
+      jsonPointers:
+        - /spec/volumeClaimTemplates/0/spec/resources/requests/storage
+        - /status
+        - /metadata/generation
+        - /metadata/resourceVersion
+    # Ignore Kafka Controller StatefulSet specific issues
+    - group: apps
+      kind: StatefulSet
+      name: kafka-controller
+      jsonPointers:
+        - /spec/volumeClaimTemplates/0/spec/resources/requests/storage
+        - /status
+        - /metadata/generation
+        - /metadata/resourceVersion
     # Ignore PVC storage requests
     - group: v1
       kind: PersistentVolumeClaim
       jsonPointers:
         - /spec/resources/requests/storage
+        - /status
