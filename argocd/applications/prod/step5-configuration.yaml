@@ -13,14 +13,23 @@ spec:
   source:
     repoURL: https://github.com/anuddeeph1/nch-using-argocd.git
     targetRevision: HEAD
-    path: scripts/deployment/steps
-    plugin:
-      name: kustomize-build-with-helm
-      env:
-        - name: ENVIRONMENT
-          value: "prod"
-        - name: SCRIPT_NAME
-          value: "05-configuration.sh"
+    path: nch-charts
+    helm:
+      valueFiles:
+        - ../config/values/base.yaml
+        - ../config/values/environments/prod.yaml
+        - ../config/values/steps/configuration.yaml
+      parameters:
+        - name: prereq.enabled
+          value: "false"
+        - name: base.enabled
+          value: "false"
+        - name: others.enabled
+          value: "false"
+        - name: postreq.enabled
+          value: "false"
+        - name: configuration.enabled
+          value: "true"
   destination:
     server: https://kubernetes.default.svc
     namespace: nch-pe

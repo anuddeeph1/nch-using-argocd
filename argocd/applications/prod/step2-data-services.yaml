@@ -43,10 +43,20 @@ spec:
         factor: 2
         maxDuration: 10m
   ignoreDifferences:
+    # Ignore service account tokens completely
+    - group: v1
+      kind: Secret
+      jqPathExpressions:
+        - 'select(.type == "kubernetes.io/service-account-token")'
+    # And ignore StatefulSet storage and status
     - group: apps
       kind: StatefulSet
       jsonPointers:
         - /spec/volumeClaimTemplates/0/spec/resources/requests/storage
+        - /status
+        - /metadata/generation
+        - /metadata/resourceVersion
+    # And ignore PVC storage
     - group: v1
       kind: PersistentVolumeClaim
       jsonPointers:
