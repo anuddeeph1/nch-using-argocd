@@ -29,7 +29,7 @@ spec:
           value: "true"
   destination:
     server: https://kubernetes.default.svc
-    namespace: nch-pe
+    namespace: nch-prod
   syncPolicy:
     automated:
       prune: true
