@@ -51,3 +51,8 @@ spec:
       kind: PersistentVolumeClaim
       jsonPointers:
         - /spec/resources/requests/storage
+    - group: v1
+      kind: Secret
+      name: mongodb-token-*
+      jsonPointers:
+        - /data
