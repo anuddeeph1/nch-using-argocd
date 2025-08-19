@@ -1,0 +1,187 @@
+#!/bin/bash
+
+# Namespace Health Monitoring Script
+# Monitors for stuck namespaces and API discovery issues
+
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+log() { echo -e "${BLUE}[$(date +'%H:%M:%S')]${NC} $*"; }
+success() { echo -e "${GREEN}✅${NC} $*"; }
+warning() { echo -e "${YELLOW}⚠️${NC} $*"; }
+error() { echo -e "${RED}❌${NC} $*" >&2; }
+
+# Check for stuck namespaces
+check_stuck_namespaces() {
+    log "🔍 Checking for stuck namespaces..."
+    
+    local stuck_namespaces=$(kubectl get namespaces --field-selector=status.phase=Terminating -o jsonpath='{.items[*].metadata.name}' 2>/dev/null || echo "")
+    
+    if [[ -n "$stuck_namespaces" ]]; then
+        error "Found stuck namespaces: $stuck_namespaces"
+        return 1
+    else
+        success "No stuck namespaces found"
+        return 0
+    fi
+}
+
+# Check Kyverno health
+check_kyverno_health() {
+    log "🔍 Checking Kyverno health..."
+    
+    # Check if Kyverno namespace exists
+    if ! kubectl get namespace kyverno >/dev/null 2>&1; then
+        warning "Kyverno namespace not found"
+        return 0
+    fi
+    
+    # Check if Kyverno pods are running
+    local kyverno_pods=$(kubectl get pods -n kyverno --field-selector=status.phase=Running -o jsonpath='{.items[*].metadata.name}' 2>/dev/null || echo "")
+    
+    if [[ -z "$kyverno_pods" ]]; then
+        error "No running Kyverno pods found"
+        return 1
+    else
+        success "Kyverno pods running: $kyverno_pods"
+        return 0
+    fi
+}
+
+# Check API discovery health
+check_api_discovery() {
+    log "🔍 Checking API discovery health..."
+    
+    # Check for stale API groups
+    local stale_apis=$(kubectl api-resources 2>&1 | grep -i "stale\|discovery" || echo "")
+    
+    if [[ -n "$stale_apis" ]]; then
+        error "API discovery issues detected: $stale_apis"
+        return 1
+    else
+        success "API discovery healthy"
+        return 0
+    fi
+}
+
+# Check namespace deletion conditions
+check_namespace_conditions() {
+    log "🔍 Checking namespace deletion conditions..."
+    
+    local problematic_namespaces=""
+    
+    # Get all namespaces with deletion conditions
+    local namespaces=$(kubectl get namespaces -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null || echo "")
+    
+    for namespace in $namespaces; do
+        local conditions=$(kubectl get namespace "$namespace" -o jsonpath='{.status.conditions[?(@.status=="True")].type}' 2>/dev/null || echo "")
+        
+        if [[ "$conditions" == *"NamespaceDeletionDiscoveryFailure"* ]]; then
+            problematic_namespaces="$problematic_namespaces $namespace"
+        fi
+    done
+    
+    if [[ -n "$problematic_namespaces" ]]; then
+        error "Namespaces with discovery failures: $problematic_namespaces"
+        return 1
+    else
+        success "No namespace discovery failures found"
+        return 0
+    fi
+}
+
+# Main monitoring function
+main() {
+    log "🚀 Starting namespace health monitoring..."
+    
+    local issues_found=0
+    
+    # Run all checks
+    check_stuck_namespaces || ((issues_found++))
+    check_kyverno_health || ((issues_found++))
+    check_api_discovery || ((issues_found++))
+    check_namespace_conditions || ((issues_found++))
+    
+    log "📊 Monitoring Summary:"
+    
+    if [[ $issues_found -eq 0 ]]; then
+        success "All namespace health checks passed"
+        return 0
+    else
+        error "$issues_found issue(s) found"
+        return 1
+    fi
+}
+
+# Continuous monitoring mode
+monitor_continuously() {
+    local interval="${1:-300}"  # Default 5 minutes
+    
+    log "🔄 Starting continuous monitoring (interval: ${interval}s)"
+    
+    while true; do
+        if ! main; then
+            warning "Issues detected - consider running cleanup script"
+        fi
+        sleep "$interval"
+    done
+}
+
+# Show usage
+show_usage() {
+    cat <<EOF
+Namespace Health Monitoring Script
+
+Usage: $0 [options]
+
+Options:
+  -h, --help           Show this help message
+  -c, --continuous     Run in continuous monitoring mode
+  -i, --interval SEC   Set monitoring interval in seconds (default: 300)
+
+Examples:
+  $0                    # Run single health check
+  $0 -c                 # Run continuous monitoring
+  $0 -c -i 60          # Run continuous monitoring with 1-minute interval
+
+EOF
+}
+
+# Parse command line arguments
+CONTINUOUS=false
+INTERVAL=300
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            show_usage
+            exit 0
+            ;;
+        -c|--continuous)
+            CONTINUOUS=true
+            shift
+            ;;
+        -i|--interval)
+            INTERVAL="$2"
+            shift 2
+            ;;
+        *)
+            error "Unknown option: $1"
+            show_usage
+            exit 1
+            ;;
+    esac
+done
+
+# Execute based on mode
+if [[ "$CONTINUOUS" == "true" ]]; then
+    monitor_continuously "$INTERVAL"
+else
+    main
+fi 

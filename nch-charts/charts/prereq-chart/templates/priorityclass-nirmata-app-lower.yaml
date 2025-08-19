@@ -1,0 +1,9 @@
+---
+apiVersion: "scheduling.k8s.io/v1"
+description: "Used for Nirmata data services with lower priority."
+kind: "PriorityClass"
+metadata:
+  name: "nirmata-app-lower"
+  namespace: {{ include "helmchart.namespace" . | quote }}
+  labels: {}
+value: 700000

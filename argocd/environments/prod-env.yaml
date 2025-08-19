@@ -1,0 +1,45 @@
+# Production Environment Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nch-prod-config
+  namespace: argocd
+data:
+  environment: "prod"
+  namespace: "nch-pe"
+  helm-values: |
+    global:
+      namespaceOverride: "nch-pe"
+      environment: "production"
+      resources:
+        defaults:
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+    mongodb-chart:
+      replicaCount: 3
+      resources:
+        limits:
+          memory: 4Gi
+        requests:
+          memory: 1Gi
+      volumeClaimTemplates:
+        spec:
+          resources:
+            requests:
+              storage: 30Gi
+    kafka-chart:
+      replicaCount: 3
+    nirmata-services-chart:
+      activity:
+        replicas: 2
+      cluster:
+        replicas: 2
+      policies:
+        replicas: 2
+    haproxy-chart:
+      haproxy:
+        replicas: 2

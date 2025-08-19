@@ -1,0 +1,65 @@
+# Step 5: Nirmata Configuration Values
+# Generic configuration structure for Nirmata API setup
+# Environment-specific values (license keys, tenant details) should be in values-{env}.yaml
+
+global:
+  # Nirmata Configuration API Settings
+  nirmataConfig:
+    # API configuration (same across environments)
+    api:
+      endpoint: "/api/v1"
+      timeout: 30
+      retries: 3
+      retryDelay: 5
+      
+    # Service discovery
+    service:
+      name: "haproxy"
+      port: 80
+      namespace: "" # Will be set by deployment script
+      
+    # Configuration features to enable
+    features:
+      license:
+        enabled: true
+        validateAfterInstall: true
+      tenant:
+        enabled: true
+        createDefaultUser: true
+        validateLogin: true
+      
+    # Validation settings
+    validation:
+      timeout: 120
+      checkInterval: 10
+      maxRetries: 5
+      
+    # Configuration order (will be executed in this sequence)
+    executionOrder:
+      - "license"
+      - "tenant"
+      
+    # Default values that can be overridden by environment
+    defaults:
+      license:
+        type: "enterprise"
+      tenant:
+        enableDefaultPolicies: true
+        enableSampleApps: false
+        
+# Step-specific settings
+stepConfig:
+  # Step 5 identification
+  step: 5
+  name: "nirmata-configuration"
+  description: "Configure Nirmata license and tenant via API"
+  
+  # Dependencies (previous steps that must be completed)
+  dependencies:
+    - "nch-prereq"     # Step 1
+    - "nch-data"       # Step 2  
+    - "nch-services"   # Step 3
+    - "nch-haproxy"    # Step 4
+    
+  # Configuration timeout
+  timeout: "15m" 

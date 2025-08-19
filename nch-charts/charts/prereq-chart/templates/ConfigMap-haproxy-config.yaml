@@ -1,0 +1,146 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: haproxy-nirmata-config
+  namespace: {{ include "helmchart.namespace" . }}
+data:
+  haproxy.cfg: |
+    global
+        GLOBAL_LOG_OPTION
+        daemon
+        maxconn 2000
+        tune.ssl.default-dh-param 1024
+        ssl-default-bind-ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!3DES:!MD5:!PSK
+        ssl-default-bind-options no-tlsv11 no-tlsv10 no-sslv3 no-tls-tickets
+        user nirmata
+        group nirmata
+
+    resolvers dnsresolver 
+        nameserver dns1 RESOLVED_DNS_ADDRESS
+        hold timeout         600s
+        hold refused         600s 
+
+    defaults
+        log global
+        maxconn 2000
+        DEFAULTS_LOG_OPTION
+        DEFAULTS_LOG_FORMAT
+        DEFAULTS_LOG_SD
+        DEFAULTS_LOG_MODE
+        option redispatch
+        option dontlognull
+        option http-server-close
+        option http-keep-alive
+        timeout http-request    5s
+        timeout connect         5s
+        timeout client          180s
+        timeout client-fin      180s
+        timeout queue           5s
+        timeout server          180s
+        timeout server-fin      180s
+        timeout tunnel          1h
+        timeout http-keep-alive 2m
+        timeout tunnel          3600s
+
+    ######
+    ###### Frontends
+    ######
+    frontend httpfront
+        mode http
+        bind *:8080
+        acl http      ssl_fc,not
+        http-request redirect scheme https if http
+
+    frontend httpsfront
+        bind *:8443 ssl crt /etc/ssl/certs/server.pem
+        mode http
+        tcp-request content accept if { req.ssl_hello_type 1 }
+        stick-table type ip size 100k expire 2m store http_req_rate(2m)
+        http-request track-sc0 src if METH_POST { path -i -m beg /security/api/accounts/reset }
+        http-request deny deny_status 429 if { sc_http_req_rate(0) gt 2 }
+        http-request redirect location /security/login.html if { path -i / }
+        use_backend webclient-443 if  { path_beg /webclient }
+        use_backend users-443 if  { path_beg /users }
+        use_backend security-443 if  { path_beg /security }
+        use_backend cluster-443 if  { path_beg /clusters }
+        use_backend cluster-443 if  { path_beg /cluster }
+        use_backend client-gateway-443 if { path_beg /client-gateway }
+        use_backend gateway-service-443 if { path_beg /gateway-service }
+        use_backend tunnel-443 if { path_beg /tunnels }
+        use_backend activity-443 if { path_beg /activity }
+        use_backend policies-443 if { path_beg /policies }
+        use_backend policy-studio-80 if { path_beg /policy-studio }
+        default_backend security-443
+        
+        # security headers
+        http-response set-header X-Frame-Options SAMEORIGIN
+        http-response set-header X-XSS-Protection 1;mode=block
+        http-response set-header X-Content-Type-Options nosniff
+        http-response set-header Strict-Transport-Security max-age=31536000;includeSubDomains;preload
+        http-response set-header Referrer-Policy no-referrer-when-downgrade
+        http-response set-header Content-Security-Policy "default-src 'self'; base-uri 'none'; script-src 'nonce-noncevalues' https://www.google.com/recaptcha https://www.gstatic.com/recaptcha https://www.gstatic.com/recaptcha/releases/YhkYx1k-yvvb8OonJPmOpoJY/recaptcha__en.js https://cdn.rawgit.com https://www.google-analytics.com https://widget.intercom.io https://js.intercomcdn.com 'self' 'unsafe-eval'; font-src 'self' https: data:; style-src 'self' 'unsafe-inline'  https:; connect-src https://www.google-analytics.com https://*.intercom.io https://stats.g.doubleclick.net https://*.github.com wss://*/client-gateway wss://nexus-websocket-a.intercom.io 'self'; img-src 'self' data: https:; frame-src 'self' https: data:"
+        # http-response set-header Content-Security-Policy "default-src 'self'; base-uri 'none'; script-src 'nonce-noncevalues' https://www.google.com/recaptcha https://www.gstatic.com/recaptcha https://www.gstatic.com/recaptcha/releases/YhkYx1k-yvvb8OonJPmOpoJY/recaptcha__en.js https://cdn.rawgit.com https://www.google-analytics.com https://widget.intercom.io https://js.intercomcdn.com 'self' 'unsafe-eval'; font-src 'self' https: data:; style-src 'self' 'unsafe-inline'  https:; connect-src https://www.google-analytics.com https://*.intercom.io https://stats.g.doubleclick.net https://*.github.com wss://*/client-gateway wss://nexus-websocket-a.intercom.io 'self'; img-src 'self' data: https:; frame-src 'self' https://www.youtube.com"
+
+        http-response set-header Permissions-Policy "geolocation=(), microphone=(), camera=()" 
+    ######
+    ###### Backends
+    ######
+    backend security-443
+        mode http
+        balance roundrobin
+        server server0000 security:443 weight 1 check port 443 inter 2s ssl verify none
+    backend users-443
+        mode http
+        balance roundrobin
+        server server0000 users:443 weight 1 check port 443 inter 2s ssl verify none
+    backend cluster-443
+        mode http
+        balance roundrobin
+        server server0000 cluster:443 weight 1 check port 443 inter 2s ssl verify none
+    backend webclient-443
+        mode http
+        balance roundrobin
+        server server0000 webclient:443 weight 1 check port 443 inter 2s verify none       
+    backend client-gateway-443
+        mode http
+        balance roundrobin
+        server server0000 client-gateway:443 weight 1 check port 443 inter 2s ssl verify none
+    backend gateway-service-443
+        mode http
+        balance roundrobin
+        server server0000 gateway-service:443 weight 1 check port 443 inter 2s ssl verify none
+    backend tunnel-443
+        mode http
+        balance roundrobin
+        server server0000 _wss._tcp.tunnel-wss.${MY_POD_NAMESPACE}.svc.cluster.local  weight 1 resolvers dnsresolver check port 8443 inter 2s ssl verify none 
+    backend activity-443
+        mode http
+        balance roundrobin
+        server server0000 activity:443 weight 1 check port 443 inter 2s ssl verify none
+    backend policies-443
+        mode http
+        balance roundrobin
+        server server0000 policies:443 weight 1 check port 443 inter 2s ssl verify none
+    backend policy-studio-80
+        mode http
+        balance roundrobin
+        server server0000 policy-studio:80 weight 1 check port 80 inter 2s verify none
+    ######
+    ###### Stats page
+    ######
+    listen stats
+        bind *:1936
+        mode http
+        stats enable
+        stats realm HAProxy\ Statistics
+        stats uri /
+        no log
+
+    ######
+    ###### Monitor URI
+    ######
+    frontend healthz
+        bind *:10253
+        mode http
+        monitor-uri /healthz
+        no log

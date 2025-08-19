@@ -1,0 +1,100 @@
+---
+kind: "ConfigMap"
+apiVersion: "v1"
+data:
+  config.yaml: |
+    npm:
+      enabled: true
+      client:
+        host: https://{{ .Values.global.product.url }}
+    mongo:
+      uri: file:/mongo/MONGODB_URI
+      database: policy-studio
+    ai:
+      host: https://llm-apps:443/generate
+      api: file:/ai/api
+      key: file:/ai/key
+      limit:
+        max: 100
+        path: /db/limit.db
+      questionnaire:
+        title: 'Just answer a short series of questions and Copilot will build a policy that validates k8s cluster resource.'
+        description: 'Your policy will check if specific conditions are met and return pass/fail.'
+        steps:
+        - id: resource
+          question: 'What type of cluster resource is this policy for?'
+          summary: 'This policy is for'
+          type: select
+          required: true
+          options: ['Pod', 'Deployment', 'DaemonSet', 'CronJob', 'Service', 'Ingress', 'NetworkPolicy', 'ConfigMap', 'Secret']
+          prompt: It will match the following resources
+        - id: selector
+          question: 'Which <resources> do you want this policy to apply to?'
+          summary: 'It applies to these <resources>'
+          prompt: It will apply to resources matching the following
+          type: text
+          required: true
+          placeholder: 'Enter one or more expressions'
+          examples:
+          - label: 'all <resources>'
+            value: 'all <resources>'
+          - label: 'have names that start with <text>'
+            value: 'have names that start with <text>'
+          - label: 'have names matching <regex>'
+            value: 'have names matching <regex>'
+          - label: 'with labels <|1 or |2, |3, |4>'
+            value: 'with labels <|1 or |2, |3, |4>'
+          - label: 'with label <aLabel:aValue>'
+            value: 'with label <aLabel:aValue>'
+          - label: 'only in namespaces ...'
+            value: 'only in namespaces '
+        
+        - id: exclusion
+          question: 'Are there any <resources> you want to exclude from this policy?'
+          summary: 'But not these <resources>'
+          prompt: It will exclude resources matching the following
+          placeholder: |
+            If none, leave blank
+            or
+            Enter one or more expressions
+          type: text
+          examples:
+          - label: 'have names that start with <text>'
+            value: 'have names that start with <text>'
+          - label: 'have names matching <regex>'
+            value: 'have names matching <regex>'
+          - label: 'with labels <|1 or |2, |3, |4>'
+            value: 'with labels <|1 or |2, |3, |4>'
+          - label: 'with label <aLabel:aValue>'
+            value: 'with label <aLabel:aValue>'
+          - label: 'only in namespaces ...'
+            value: 'only in namespaces '
+        
+        - id: expressions
+          question: "Write one or more expressions that will validate the <resource>"
+          summary: 'The <resource> is valid when'
+          placeholder: Enter one or more expressions
+          prompt: The rule will validate the following
+          type: text
+          required: true
+          examples:
+          - label: 'must have labels <|1 or |2, |3, |4>'
+            value: 'must have labels '
+          - label: 'label <aLabel> must be <aValue>'
+            value: 'label <aLabel> must be <aValue>'
+          - label: 'or annotation desc is: this is a test'
+            value: 'annotation desc is: this is a test'
+          - label: 'field has value <aValue>'
+            value: 'field has value <aValue>'
+    server:
+      mode: release
+      basePath: /policy-studio
+    simulation:
+      kubernetes:
+        version: '1.30'
+metadata:
+  name: "policy-studio-config"
+  namespace: {{ include "helmchart.namespace" . | quote }}
+  labels:
+    nirmata.io/configmap.name: "policy-studio-config"
+    nirmata.io/type: "app"

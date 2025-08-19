@@ -1,0 +1,796 @@
+# Test values for nirmata-services.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+product:
+  url: "onprem-nch.nirmata.co"
+  product: "Enterprise"
+  productName: "PrivateEdition"
+  productVersion: ""
+
+common:
+  version: "4.8.3"
+  tunnelServerAddress: https://tunnel-0.tunnel:9090
+  clusterIP: "None"
+
+global:
+  provider: "aks"
+  storageClassName: null
+  namespaceOverride: ""
+  env:
+    JAVA_TOOL_OPTIONS:
+      value: "-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9999 \
+        -Dcom.sun.management.jmxremote.rmi.port=9999 -Dcom.sun.management.jmxremote.authenticate=false \
+        -Dcom.sun.management.jmxremote.ssl=false"
+    JAVA_OPTS:
+      value: "-XshowSettings:vm -XX:MaxRAMPercentage=70.0"
+  imagePullSecrets:
+    name: ghcr.io
+
+secrethelm:
+  data:
+    tlscrt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUZBVENDQSttZ0F3SUJBZ0lTQkxISHdoREhHVzlyU1FzUGRVV21lRzRBTUEwR0NTcUdTSWIzRFFFQkN3VUEKTURJeEN6QUpCZ05WQkFZVEFsVlRNUll3RkFZRFZRUUtFdzFNWlhRbmN5QkZibU55ZVhCME1Rc3dDUVlEVlFRRApFd0pTTXpBZUZ3MHlNekEzTURjd09EVTNNVEJhRncweU16RXdNRFV3T0RVM01EbGFNQ1V4SXpBaEJnTlZCQU1UCkduUmxjM1F0YUdWc2JTMWphR0Z5ZEM1dWFYSnRZWFJoTG1Odk1JSUJJakFOQmdrcWhraUc5dzBCQVFFRkFBT0MKQVE4QU1JSUJDZ0tDQVFFQXBXVkJXUUxWdE9mYSsyVS9PeXB2MC9NSXphV3k2RTVKWXB1aW5yMy9QYng0SWdVaQpMalo3TlBSN2RLZlhSd1p2Q2lqbG1VM3FoSDF2OS80RGFWRlBPZUxFRHhLOTFINzlvbkNsUXh2aEFLZEhUUGx2CmRLbC9SZ0VoWXBxVEUwYTNLR0czS3JsQTRZMm1JSkRaMjIxUWYwRXZYTkZLdFAvbWdBKzJYak0xNTJkTXlyZWUKRHZTaXFjT3JHZVlqSUUzVUxjbG1XeEVlTU5WU1RMTk05K3JZK0k1QVkrSWYxZFd4eUx5dy9zSVZlQ0craFFSQgp2OWphUVM3WXlPSWlQbmdlUHpqUE1CeEkreXBYVTB4bWxEYU5GV0lJYkxqWG5iS0cvV3JmS0FjM0hLZXB3emEzCmg3QTNsQnRsajRkcUg4V1FMYXB0dGQzNVBMMDdkeTA3TTU4ZjR3SURBUUFCbzRJQ0hEQ0NBaGd3RGdZRFZSMFAKQVFIL0JBUURBZ1dnTUIwR0ExVWRKUVFXTUJRR0NDc0dBUVVGQndNQkJnZ3JCZ0VGQlFjREFqQU1CZ05WSFJNQgpBZjhFQWpBQU1CMEdBMVVkRGdRV0JCUWlSUlJVVVh1a2M5UitzbmN3MTJMSzZ2ZkJpVEFmQmdOVkhTTUVHREFXCmdCUVVMck1YdDFoV3k2NVFDVURtSDYrZGl4VEN4akJWQmdnckJnRUZCUWNCQVFSSk1FY3dJUVlJS3dZQkJRVUgKTUFHR0ZXaDBkSEE2THk5eU15NXZMbXhsYm1OeUxtOXlaekFpQmdnckJnRUZCUWN3QW9ZV2FIUjBjRG92TDNJegpMbWt1YkdWdVkzSXViM0puTHpBbEJnTlZIUkVFSGpBY2docDBaWE4wTFdobGJHMHRZMmhoY25RdWJtbHliV0YwCllTNWpiekFUQmdOVkhTQUVEREFLTUFnR0JtZUJEQUVDQVRDQ0FRUUdDaXNHQVFRQjFua0NCQUlFZ2ZVRWdmSUEKOEFCM0FMYysreVRmbkUyNmRmSTV4YnBZOUd4ZC9FTFBlcDgxeEo0ZENZRWw3YlNaQUFBQmlTL0l0eVVBQUFRRApBRWd3UmdJaEFNVGlRZmF4WFhTcTJtU3V4THlSN1NORng1cVNkdDJnTmVCTFVTVHZCT2xWQWlFQXNVZVU3VElVClRKYy9QWkora1Fpa2FLVDF3VU9VQ0IwbTFXNEZkUE1zMGQ0QWRRRG9QdERhUHZVR05UTG5WeWk4aVd2SkE5UEwKMFJGcjdPdHA0WGQ5YlFhOWJnQUFBWWt2eUxjd0FBQUVBd0JHTUVRQ0lBTERTeGZpWTU4QjBtVFgzY1o3L0tPdQptM0V3T3BnNWFKell0a1J6Q3ZjakFpQTJtNitIdG5LdlRQcVFrRGR0RjR0VkF6aHdjaHFzb0F3by9JdnQzWlo4CnpEQU5CZ2txaGtpRzl3MEJBUXNGQUFPQ0FRRUFVUCtPU1Z0dDNPUEZTa0lNRXJZMEErM3dmQ3pZc2xUTk9nUGEKMXpmMzdFblF4WSsvWWU0anB6ZjNjbldjcmxmckUzSE1YWUJRUUYvcnFYYjNhK29EeC9vSFFkQ0JOT0U0T2tPWgo5MDdkUEgrMjdRai93YXJVUlBiTGVJYXo4bTFmSU94c1F3VG5RM0tiZWc3bk9jbTFXWksrL0FPVUtVakdPb2d2CitzMFVhRDdGUkczbDNuZGpLM0hMSW83SU1xRG9xNHNLNHQxbkc2dmEzbzlFSWREdXMrTGZXV01DZGRhdFZmRmsKRVlESGhpVTdaejRkNlBCYytMYjFBVms3bVVIWlJWbVpuWlZoNWpua3ZZY1ZJbVhlMjFhdU02ZkVpOVBhOW9SYQozbVRpNzJCdFVTSy9ROHJKVDVuTmpFZTdnVGhWZGhPQUsyT3pZUVRqU2w5RHUzMWtMZz09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0KLS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUZGakNDQXY2Z0F3SUJBZ0lSQUpFckNFclBEQmluVS9iV0xpV25YMW93RFFZSktvWklodmNOQVFFTEJRQXcKVHpFTE1Ba0dBMVVFQmhNQ1ZWTXhLVEFuQmdOVkJBb1RJRWx1ZEdWeWJtVjBJRk5sWTNWeWFYUjVJRkpsYzJWaApjbU5vSUVkeWIzVndNUlV3RXdZRFZRUURFd3hKVTFKSElGSnZiM1FnV0RFd0hoY05NakF3T1RBME1EQXdNREF3CldoY05NalV3T1RFMU1UWXdNREF3V2pBeU1Rc3dDUVlEVlFRR0V3SlZVekVXTUJRR0ExVUVDaE1OVEdWMEozTWcKUlc1amNubHdkREVMTUFrR0ExVUVBeE1DVWpNd2dnRWlNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUJEd0F3Z2dFSwpBb0lCQVFDN0FoVW96UGFnbE5NUEV1eU5WWkxEK0lMeG1hWjZRb2luWFNhcXRTdTV4VXl4cjQ1citYWElvOWNQClI1UVVWVFZYako2b29qa1o5WUk4UXFsT2J2VTd3eTdiamNDd1hQTlpPT2Z0ejJud1dnc2J2c0NVSkNXSCtqZHgKc3hQbkhLemhtKy9iNUR0RlVrV1dxY0ZUempUSVV1NjFydTJQM21CdzRxVlVxN1p0RHBlbFFEUnJLOU84WnV0bQpOSHo2YTR1UFZ5bVorREFYWGJweWIvdUJ4YTNTaGxnOUY4Zm5DYnZ4Sy9lRzNNSGFjVjNVUnVQTXJTWEJpTHhnClozVm1zL0VZOTZKYzVsUC9Pb2kyUjZYL0V4anFtQWwzUDUxVCtjOEI1ZldtY0JjVXIyT2svNW16azUzY1U2Y0cKL2tpRkhhRnByaVYxdXhQTVVnUDE3VkdoaTlzVkFnTUJBQUdqZ2dFSU1JSUJCREFPQmdOVkhROEJBZjhFQkFNQwpBWVl3SFFZRFZSMGxCQll3RkFZSUt3WUJCUVVIQXdJR0NDc0dBUVVGQndNQk1CSUdBMVVkRXdFQi93UUlNQVlCCkFmOENBUUF3SFFZRFZSME9CQllFRkJRdXN4ZTNXRmJMcmxBSlFPWWZyNTJMRk1MR01COEdBMVVkSXdRWU1CYUEKRkhtMFdlWjd0dVhrQVhPQUNJaklHbGoyNlp0dU1ESUdDQ3NHQVFVRkJ3RUJCQ1l3SkRBaUJnZ3JCZ0VGQlFjdwpBb1lXYUhSMGNEb3ZMM2d4TG1rdWJHVnVZM0l1YjNKbkx6QW5CZ05WSFI4RUlEQWVNQnlnR3FBWWhoWm9kSFJ3Ck9pOHZlREV1WXk1c1pXNWpjaTV2Y21jdk1DSUdBMVVkSUFRYk1Ca3dDQVlHWjRFTUFRSUJNQTBHQ3lzR0FRUUIKZ3Q4VEFRRUJNQTBHQ1NxR1NJYjNEUUVCQ3dVQUE0SUNBUUNGeWs1SFBxUDNoVVNGdk5WbmVMS1lZNjExVFI2VwpQVE5sY2xRdGdhRHF3KzM0SUw5ZnpMZHdBTGR1Ty9aZWxON2tJSittNzR1eUErZWl0Ulk4a2M2MDdUa0M1M3dsCmlrZm1aVzQvUnZUWjhNNlVLKzVVemhLOGpDZEx1TUdZTDZLdnpYR1JTZ2kzeUxnamV3UXRDUGtJVno2RDJRUXoKQ2tjaGVBbUNKOE1xeUp1NXpsenlaTWpBdm5uQVQ0NXRSQXhla3JzdTk0c1E0ZWdkUkNuYldTRHRZN2toK0JJbQpsSk5Yb0IxbEJNRUtJcTRRRFVPWG9SZ2ZmdURnaGplMVdyRzlNTCtIYmlzcS95Rk9Hd1hEOVJpWDhGNnN3Nlc0CmF2QXV2RHN6dWU1TDNzejg1SytFQzRZL3dGVkROdlpvNFRZWGFvNlowZitsUUtjMHQ4RFFZemsxT1hWdThycDIKeUpNQzZhbExiQmZPREFMWnZZSDduN2RvMUFabHM0STlkMVA0am5rRHJRb3hCM1VxUTloVmwzTEVLUTczeEYxTwp5SzVHaEREWDhvVmZHS0Y1dStkZWNJc0g0WWFUdzdtUDNHRnhKU3F2MyswbFVGSm9pNUxjNWRhMTQ5cDkwSWRzCmhDRXhyb0wxKzdtcnlJa1hQZUZNNVRnTzlyMHJ2WmFCRk92VjJ6MGdwMzVaMCtMNFdQbGJ1RWpOL2x4UEZpbisKSGxVanI4Z1JzSTNxZkpPUUZ5LzlyS0lKUjBZLzhPbXd0LzhvVFdneTFtZGVIbW1qazdqMW5Zc3ZDOUpTUTZadgpNbGRsVFRLQjN6aFRoVjErWFdZcDZyamQ1SlcxemJWV0VrTE54RTdHSlRoRVVHM3N6Z0JWR1A3cFNXVFVUc3FYCm5MUmJ3SE9vcTdoSHdnPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQotLS0tLUJFR0lOIENFUlRJRklDQVRFLS0tLS0KTUlJRllEQ0NCRWlnQXdJQkFnSVFRQUYzSVRmVTZVSzQ3bmFxUEdRS3R6QU5CZ2txaGtpRzl3MEJBUXNGQURBLwpNU1F3SWdZRFZRUUtFeHRFYVdkcGRHRnNJRk5wWjI1aGRIVnlaU0JVY25WemRDQkRieTR4RnpBVkJnTlZCQU1UCkRrUlRWQ0JTYjI5MElFTkJJRmd6TUI0WERUSXhNREV5TURFNU1UUXdNMW9YRFRJME1Ea3pNREU0TVRRd00xb3cKVHpFTE1Ba0dBMVVFQmhNQ1ZWTXhLVEFuQmdOVkJBb1RJRWx1ZEdWeWJtVjBJRk5sWTNWeWFYUjVJRkpsYzJWaApjbU5vSUVkeWIzVndNUlV3RXdZRFZRUURFd3hKVTFKSElGSnZiM1FnV0RFd2dnSWlNQTBHQ1NxR1NJYjNEUUVCCkFRVUFBNElDRHdBd2dnSUtBb0lDQVFDdDZDUno5QlEzODV1ZUsxY29ISWUrM0xmZk9KQ01ianptVjZCNDkzWEMKb3Y3MWFtNzJBRThvMjk1b2hteEVrN2F4WS8wVUVtdS9IOUxxTVpzaGZ0RXpQTHBJOWQxNTM3TzQveEx4SVpwTAp3WXFHY1dsS1ptWnNqMzQ4Y0wrdEtTSUc4K1RBNW9DdTRrdVB0NWwrbEFPZjAwZVhmSmxJSTFQb09LNVBDbStECkx0RkpWNHlBZExiYUw5QTRqWHNEY0NFYmRmSXdQUHFQcnQzYVk2dnJGay9DamhGTGZzOEw2UCsxZHk3MHNudEsKNEV3U0pReHdqUU1wb09GVEpPd1QyZTRadnhDelNvdy9pYU5oVWQ2c2h3ZVU5R054N0M3aWIxdVlnZUdKWERSNQpiSGJ2TzVCaWVlYmJwSm92SnNYUUVPRU8zdGtRamhiN3QvZW85OGZsQWdlWWp6WUlsZWZpTjVZTk5uV2UrdzV5CnNSMmJ2QVA1U1FYWWdkMEZ0Q3JXUWVtc0FYYVZDZy9ZMzlXOUVoODFMeWdYYk5LWXdhZ0paSGR1UnplNnpxeFoKWG1pZGYzTFdpY1VHUVNrK1dUN2RKdlVreVJHbldxTk1RQjlHb1ptMXB6cFJib1k3bm4xeXB4SUZlRm50UGxGNApGUXNEajQzUUx3V3lQbnRLSEV0ekJSTDh4dXJnVUJOOFE1TjBzOHAwNTQ0ZkFRalFNTlJiY1RhMEI3ckJNREJjClNMZUNPNWltZldDS29xTXBnc3k2dllNRUc2S0RBMEdoMWdYeEc4SzI4S2g4aGp0R3FFZ3FpTngybW5hL0gycWwKUFJtUDZ6anpaTjdJS3cwS0tQLzMyK0lWUXRRaTBDZGQ0WG4rR09kd2lLMU81dG1MT3NiZEoxRnUvN3hrOVRORApUd0lEQVFBQm80SUJSakNDQVVJd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBT0JnTlZIUThCQWY4RUJBTUNBUVl3ClN3WUlLd1lCQlFVSEFRRUVQekE5TURzR0NDc0dBUVVGQnpBQ2hpOW9kSFJ3T2k4dllYQndjeTVwWkdWdWRISjEKYzNRdVkyOXRMM0p2YjNSekwyUnpkSEp2YjNSallYZ3pMbkEzWXpBZkJnTlZIU01FR0RBV2dCVEVwN0drZXl4eAordHZoUzVCMS84UVZZSVdKRURCVUJnTlZIU0FFVFRCTE1BZ0dCbWVCREFFQ0FUQS9CZ3NyQmdFRUFZTGZFd0VCCkFUQXdNQzRHQ0NzR0FRVUZCd0lCRmlKb2RIUndPaTh2WTNCekxuSnZiM1F0ZURFdWJHVjBjMlZ1WTNKNWNIUXUKYjNKbk1Ed0dBMVVkSHdRMU1ETXdNYUF2b0MyR0syaDBkSEE2THk5amNtd3VhV1JsYm5SeWRYTjBMbU52YlM5RQpVMVJTVDA5VVEwRllNME5TVEM1amNtd3dIUVlEVlIwT0JCWUVGSG0wV2VaN3R1WGtBWE9BQ0lqSUdsajI2WnR1Ck1BMEdDU3FHU0liM0RRRUJDd1VBQTRJQkFRQUtjd0JzbG03L0RsTFFydDJNNTFvR3JTK280NCsveVFvREZWREMKNVd4Q3UyK2I5TFJQd2tTSUNIWE02d2ViRkdKdWVON3NKN281WFBXaW9XNVdsSEFRVTdHNzVLL1Fvc01yQWRTVwo5TVVnTlRQNTJHRTI0SEdOdExpMXFvSkZsY0R5cVNNbzU5YWh5MmNJMnFCRExLb2JreC9KM3ZXcmFWMFQ5VnVHCldDTEtUVlhrY0dkdHdsZkZSamxCejRwWWcxaHRtZjVYNkRZTzhBNGpxdjJJbDlEalhBNlVTYlcxRnpYU0xyOU8KaGU4WTRJV1M2d1k3YkNrakNXRGNSUUpNRWhnNzZmc08zdHhFK0ZpWXJ1cTlSVVdoaUYxbXl2NFE2VytDeUJGQwpEZnZwN09PR0FONmRFT000K3FSOXNkam9TWUtFQnBzcjZHdFBBUXc0ZHk3NTNlYzUKLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+    tlskey: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2QUlCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktZd2dnU2lBZ0VBQW9JQkFRQ2xaVUZaQXRXMDU5cjcKWlQ4N0ttL1Q4d2pOcGJMb1RrbGltNktldmY4OXZIZ2lCU0l1Tm5zMDlIdDBwOWRIQm04S0tPV1pUZXFFZlcvMwovZ05wVVU4NTRzUVBFcjNVZnYyaWNLVkRHK0VBcDBkTStXOTBxWDlHQVNGaW1wTVRScmNvWWJjcXVVRGhqYVlnCmtObmJiVkIvUVM5YzBVcTAvK2FBRDdaZU16WG5aMHpLdDU0TzlLS3B3NnNaNWlNZ1RkUXR5V1piRVI0dzFWSk0KczB6MzZ0ajRqa0JqNGgvVjFiSEl2TEQrd2hWNEliNkZCRUcvMk5wQkx0akk0aUkrZUI0L09NOHdIRWo3S2xkVApUR2FVTm8wVllnaHN1TmVkc29iOWF0OG9CemNjcDZuRE5yZUhzRGVVRzJXUGgyb2Z4WkF0cW0yMTNmazh2VHQzCkxUc3pueC9qQWdNQkFBRUNnZ0VBVHFTNHo5UXpQWlBKWWlRZ1RzZTg2TEQxREtPdlVCcDVkbk8rZlhDbVB2cXcKdkt4b05rVWRqRzU3alZxSldISk10aTRBRGtjb0xkdGZORElKK1RmNlRmSHZlNk5UdEFpMkhWa21tNlJUOW5XVAp4NXdMVFJPVE92d3FuYklXSU9KTkVOeDF0ZERrY3R0aGxMYUxnSFNZQkFwQXRRZW5XQzBkc3VMRnVrRHJicDNCCjRMTDZsNHB0dXRSaFhzYk1UNzJNZDR5T3pCdnpNN3FBRWV3MWpoa0VGRVY3YXpmSkQ0M3dxVnNBT3JweFl4UGsKN0wzaXNKZi8rTlBlRTYvOWpiaHFtYytWTHk4VFBmRGU2RmRaTlp0ZXlRT2NGb3cxVDQ5Q3hWQndGU2JDc0lwdwpaTWE5R2VGczVRY2poTEs3cURDYmhTSm9kUXhucnRxbG93S0xPWXR3NFFLQmdRRFdqeDJ4eFUzWjBETFBNYlhTClRZVCt5SDU3ZE1JRy83RVl0TXBvd2RCWXFrdVp4Uy9XQXc5bGlUaWF2MXVUWElYYVluRzI5NWpOTWFJdVZRT2EKU0JQV05qeW5JbEdqMGxXUVFKNWFXdWxSUFJ0MWVMbUdoUUNSd1hGTkNTd0F3eFF0T2NDeXV5a1doOGh5TnFqYwpHVG5MbUpWbWJkRkhLRDVJZllrWlVTSFFlUUtCZ1FERlZ6OFJ4djFZWDlWRjQ1Nm5CMUF2TmY5M2lZbWF2RDRhCnMzWUQ2MU1lVWtvVWMxTzYya0l5WEJ0K3gzeWZWMXIxYms4dXhNK0Q5YlM3V0xuVkJkWWZ3enlyZ1pMVCtqZXkKZ2oxQjlacXV6ZU4xSmJaL3ZuQmh6UDZ6dFJaMkRraUtWQkhjWUJtbDJhdFRFanZMSytQSmg2ejJaVVdlMktkMgpUaHVQNG5lME93S0JnRW13SlZha21MUXgyUUZuNVRZeEFYZ3ZpNkVDM0pCaXlJUGZzNVIrMi90WG9WZFNiYmRtCm5hY1ZsYWN3Q1ZkMjgxR3BkYnlORktHRVpscmJQNzJBKzY4YU9ZSjlPdVMwbkVaS3F4Z0ZHUlNabEJDb1FhOTkKaGxDSXkwelYxWkw5YkxTTG5TN0ZNTHRZTHZOcTZsdU5IbGhhTXhWV3FnVnlRTkhNcTRWU1kvYWhBb0dBUDJ1bwpvMGYyUjU2VTVoOGU3OE1UNi9oSW45d2QweExJU3NCK0h3aFQ4QnkySGhocVFsUytqWHk0Z1dnUER3NTk5djU2CmlDZE1JYmFuWE1aSkFzTWJhNTNOTTdreXZObGZhUWtlTXNLQjhjZk5YK3E4MmhVVC9QcHFxTXA3NjNqdnF6VVYKZ0dPS0dwajN6SHpCcHF2MlN1QkZuL0l3QzdySkp1WTNTV2lZMjkwQ2dZQkFyWEF1Qk9TMnBETEdFZjhGWVdwUgpGSU5ZeWczRjBzYU9ZL3ZRckY3QmhYc24rTC9wRHZlNkxjU1Z3QUlPNncxRVpjL1VuUHByY3FsKy9VelVWYmZyCkpaQXlZZjZmV1lVUGt1NEdOVCtQaDRZbEpUd3NaajAyaGhWWXI1cHBVN3lXZWNHMVVlekg4b2VnbURmbmFkSFkKVElZaENWUElFQmVuNnBrVkVscHJ2UT09Ci0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0K
+    
+proxy:
+  HTTPS_PROXY: null
+  HTTP_PROXY: null
+  https_proxy: null
+  http_proxy: null
+  no_proxy: null
+  NO_PROXY: null
+
+defaultImageRegistry:
+  name: ""
+  username: ""
+  password: ""
+  dockercfg: '{"":{"password":"","email":"","username":""}}'
+  nirmataAgentImage: "nirmata/nirmata-host-agent"
+
+activity:
+  env:
+    JAVA_TOOL_OPTIONS:
+      value: null
+    JAVA_OPTS:
+      value: null
+  logLevel: "warn"
+  replicas: 1
+  livenessProbe:
+    initialDelaySeconds: 120
+    timeoutSeconds: 1
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 3
+    httpGet:
+      path: "/activity/status"
+      port: 8443
+      scheme: "HTTPS"
+  readinessProbe:
+    initialDelaySeconds: 10
+    timeoutSeconds: 1
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 3
+    httpGet:
+      path: "/activity/status"
+      port: 8443
+      scheme: "HTTPS"
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - namespaces: []
+        labelSelector:
+          matchLabels: {}
+          matchExpressions:
+          - key: "nirmata.io/deployment.name"
+            operator: "In"
+            values:
+            - "activity"
+        topologyKey: "kubernetes.io/hostname"  
+  resources:
+    limits:
+      memory: "512Mi"
+    requests:
+      memory: "100Mi"
+  image:
+    name: activity
+    pullPolicy: IfNotPresent
+    tag: null
+
+clientgateway:
+  env:
+    JAVA_TOOL_OPTIONS:
+      value: null
+    JAVA_OPTS:
+      value: null
+  logLevel: "warn"
+  replicas: 1
+  livenessProbe:
+    initialDelaySeconds: 120
+    timeoutSeconds: 1
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 3
+    httpGet:
+      path: "/client-gateway/status"
+      port: 8443
+      scheme: "HTTPS"
+  readinessProbe:
+    initialDelaySeconds: 10
+    timeoutSeconds: 1
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 3
+    httpGet:
+      path: "/client-gateway/status"
+      port: 8443
+      scheme: "HTTPS"
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - namespaces: []
+        labelSelector:
+          matchLabels: {}
+          matchExpressions:
+          - key: "nirmata.io/deployment.name"
+            operator: "In"
+            values:
+            - "client-gateway"
+        topologyKey: "kubernetes.io/hostname"
+  resources:
+    limits:
+      memory: "512Mi"
+    requests:
+      cpu: 0.2
+      memory: "350Mi"
+  image:
+    name: client-gateway
+    pullPolicy: IfNotPresent
+    tag: null
+  tolerations:
+  - key: "node.kubernetes.io/not-ready"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 20
+  - key: "node.kubernetes.io/unreachable"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 20
+
+cluster:
+  env:
+    JAVA_TOOL_OPTIONS:
+      value: null
+    JAVA_OPTS:
+      value: "-XshowSettings:vm -XX:MaxRAMPercentage=70.0 -Dnirmata.awssubscription.enable=true"
+  logLevel: "warn"
+  replicas: 1
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - namespaces: []
+        labelSelector:
+          matchLabels: {}
+          matchExpressions:
+          - key: "nirmata.io/deployment.name"
+            operator: "In"
+            values:
+            - "cluster"
+        topologyKey: "kubernetes.io/hostname"
+  livenessProbe:
+    initialDelaySeconds: 180
+    timeoutSeconds: 5
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 5
+    httpGet:
+      path: "/cluster/status"
+      port: 8443
+      scheme: "HTTPS"
+  readinessProbe:
+    initialDelaySeconds: 180
+    timeoutSeconds: 5
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 5
+    httpGet:
+      path: "/cluster/status"
+      port: 8443
+      scheme: "HTTPS"
+  resources:
+    limits:
+      memory: "1Gi"
+    requests:
+      memory: "100Mi"
+      cpu: 0.5
+  image:
+    name: cluster
+    pullPolicy: IfNotPresent
+    tag: null
+  tolerations:
+  - key: "node.kubernetes.io/not-ready"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 20
+  - key: "node.kubernetes.io/unreachable"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 20
+
+gatewayservice:
+  env:
+    JAVA_TOOL_OPTIONS:
+      value: null
+    JAVA_OPTS:
+      value: "-XshowSettings:vm"
+  logLevel: "warn"
+  replicas: 1
+  livenessProbe:
+    initialDelaySeconds: 120
+    timeoutSeconds: 1
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 3
+    httpGet:
+      path: "/gateway-service/status"
+      port: 8443
+      scheme: "HTTPS"
+  readinessProbe:
+    initialDelaySeconds: 10
+    timeoutSeconds: 1
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 3
+    httpGet:
+      path: "/gateway-service/status"
+      port: 8443
+      scheme: "HTTPS"
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - namespaces: []
+        labelSelector:
+          matchLabels: {}
+          matchExpressions:
+          - key: "nirmata.io/deployment.name"
+            operator: "In"
+            values:
+            - "gateway-service"
+        topologyKey: "kubernetes.io/hostname"
+  resources:
+    limits:
+      memory: "1Gi"
+    requests:
+      memory: "256Mi"
+  image:
+    name: gateway-service
+    pullPolicy: IfNotPresent
+    tag: null
+  tolerations:
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 20
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 20
+      - effect: NoSchedule
+        key: kubernetes.aws.com/scalesetpriority
+        operator: Equal
+        value: spot
+
+
+llmapps:
+  debug: false
+  replicas: 1
+  livenessProbe:
+    initialDelaySeconds: 120
+    timeoutSeconds: 1
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 3
+    tcpSocket:
+      port: 8443
+  readinessProbe:
+    initialDelaySeconds: 10
+    timeoutSeconds: 1
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 3
+    tcpSocket:
+      port: 8443
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - namespaces: []
+        labelSelector:
+          matchLabels: {}
+          matchExpressions:
+          - key: "nirmata.io/deployment.name"
+            operator: "In"
+            values:
+            - "llm-apps"
+        topologyKey: "kubernetes.io/hostname"
+  resources:
+    limits:
+      memory: "256Mi"
+    requests:
+      memory: "128Mi"
+  image:
+    name: llm-apps
+    pullPolicy: IfNotPresent
+    tag: null
+  tolerations:
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 20
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 20
+
+policieseventprocessor:
+  env:
+    nirmata_datapipeline_enabled:
+      value: "false"
+    JAVA_TOOL_OPTIONS:
+      value: null
+    JAVA_OPTS:
+      value: "-XX:InitialRAMPercentage=80.0 -XX:MinRAMPercentage=80.0 -XX:MaxRAMPercentage=80.0 -XshowSettings:VM -Dquarkus.profile=prod -Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+  logLevel: "warn"
+  replicas: 1
+  resources:
+    limits:
+      memory: "3Gi"
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+  image:
+    name: policies
+    tag: null
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: nirmata.io/deployment.name
+            operator: In
+            values:
+            - policies-event-processor
+        topologyKey: kubernetes.io/hostname
+  livenessProbe:
+    initialDelaySeconds: 60
+    timeoutSeconds: 5
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 5
+    httpGet:
+      path: "/policies/status"
+      port: 8443
+      scheme: "HTTPS"
+  readinessProbe:
+    initialDelaySeconds: 60
+    timeoutSeconds: 5
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 5
+    httpGet:
+      path: "/policies/status"
+      port: 8443
+      scheme: "HTTPS"
+  tolerations:
+  - key: "node.kubernetes.io/not-ready"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 20
+  - key: "node.kubernetes.io/unreachable"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 20
+
+policiesprocessor:
+  env:
+    JAVA_TOOL_OPTIONS:
+      value: null
+    JAVA_OPTS:
+      value: "-XX:InitialRAMPercentage=80.0 -XX:MinRAMPercentage=80.0 -XX:MaxRAMPercentage=80.0 -XshowSettings:VM -Dquarkus.profile=prod -Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+  logLevel: "warn"
+  replicas: 1
+  resources:
+    limits:
+      memory: "10Gi"
+    requests:
+      memory: "3Gi"
+      cpu: 3.5
+  image:
+    name: policies
+    tag: null
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: nirmata.io/deployment.name
+            operator: In
+            values:
+            - policies-processor
+        topologyKey: kubernetes.io/hostname
+  livenessProbe:
+    initialDelaySeconds: 60
+    timeoutSeconds: 5
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 5
+    httpGet:
+      path: "/policies/status"
+      port: 8443
+      scheme: "HTTPS"
+  readinessProbe:
+    initialDelaySeconds: 60
+    timeoutSeconds: 5
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 5
+    httpGet:
+      path: "/policies/status"
+      port: 8443
+      scheme: "HTTPS"
+  tolerations:
+  - key: "node.kubernetes.io/not-ready"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 20
+  - key: "node.kubernetes.io/unreachable"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 20
+
+policies:
+  env:
+    JAVA_TOOL_OPTIONS:
+      value: null
+    JAVA_OPTS:
+      value: "-XX:InitialRAMPercentage=80.0 -XX:MinRAMPercentage=80.0 -XX:MaxRAMPercentage=80.0 -XshowSettings:VM -Dquarkus.profile=prod -Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+  logLevel: "warn"
+  replicas: 1
+  resources:
+    limits:
+      memory: "2Gi"
+    requests:
+      memory: "800Mi"
+      cpu: 0.5
+  image:
+    name: policies
+    tag: null
+  livenessProbe:
+    initialDelaySeconds: 60
+    timeoutSeconds: 5
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 5
+    httpGet:
+      path: "/policies/status"
+      port: 8443
+      scheme: "HTTPS"
+  readinessProbe:
+    initialDelaySeconds: 60
+    timeoutSeconds: 5
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 5
+    httpGet:
+      path: "/policies/status"
+      port: 8443
+      scheme: "HTTPS"
+  affinity:
+    nodeAffinity:
+      # requiredDuringSchedulingIgnoredDuringExecution:
+      #   nodeSelectorTerms:
+      #   - matchExpressions:
+      #     - key: node.kubernetes.io/instance-type
+      #       operator: In
+      #       values:
+      #       - m7g.4xlarge
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: nirmata.io/deployment.name
+            operator: In
+            values:
+            - policies
+        topologyKey: kubernetes.io/hostname
+
+  tolerations:
+  - key: "node.kubernetes.io/not-ready"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 20
+  - key: "node.kubernetes.io/unreachable"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 20
+
+tunnel:
+  replicas: 2
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - namespaces: []
+        labelSelector:
+          matchLabels: {}
+          matchExpressions:
+          - key: "nirmata.io/statefulset.name"
+            operator: "In"
+            values:
+            - "tunnel"
+        topologyKey: "kubernetes.io/hostname"
+  resources:
+    limits:
+      memory: "512Mi"
+    requests:
+      memory: "200Mi"
+      cpu: 1
+  image:
+    name: nirmata-tunnel-server
+    pullPolicy: IfNotPresent
+    tag: null
+
+clusterprocesser:
+  replicas: 1
+  logLevel: "warn"
+  env:
+    JAVA_TOOL_OPTIONS:
+      value: null
+    JAVA_OPTS:
+      value: "-XshowSettings:vm -XX:MaxRAMPercentage=70.0 -Dnirmata.awssubscription.enable=true"
+  image:
+    name: cluster
+    pullPolicy: IfNotPresent
+    tag: null
+  livenessProbe:
+    initialDelaySeconds: 180
+    timeoutSeconds: 5
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 5
+    httpGet:
+      path: "/cluster/status"
+      port: 8443
+      scheme: "HTTPS"
+  readinessProbe:
+    initialDelaySeconds: 180
+    timeoutSeconds: 5
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 5
+    httpGet:
+      path: "/cluster/status"
+      port: 8443
+      scheme: "HTTPS"
+  resources:
+    limits:
+      memory: "12Gi"
+    requests:
+      memory: "5Gi"
+      cpu: 1
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: node.kubernetes.io/instance-type
+            operator: In
+            values: 
+            - m7g.4xlarge
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: nirmata.io/deployment.name
+            operator: In
+            values:
+            - cluster-processor
+        topologyKey: kubernetes.io/hostname
+  tolerations:
+  - key: "dedicated"
+    operator: "Equal"
+    value: "m5a.4xlarge"
+    effect: "NoSchedule"
+  - key: "nirmata.io/dedicated-worker-group"
+    operator: "Equal"
+    value: "worker-group-1"
+    effect: "NoSchedule"
+  - key: "node.kubernetes.io/not-ready"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 20
+  - key: "node.kubernetes.io/unreachable"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 20
+
+webclient:
+  env:
+    JAVA_TOOL_OPTIONS:
+      value: null
+    JAVA_OPTS:
+      value: null
+  replicas: 1
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - namespaces: []
+        labelSelector:
+          matchLabels: {}
+          matchExpressions:
+          - key: "nirmata.io/deployment.name"
+            operator: "In"
+            values:
+            - "webclient"
+        topologyKey: "kubernetes.io/hostname"
+  livenessProbe:
+    initialDelaySeconds: 15
+    timeoutSeconds: 1
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 5
+    httpGet:
+      path: "/webclient/"
+      port: 8443
+      scheme: "HTTP"
+  readinessProbe:
+    initialDelaySeconds: 10
+    timeoutSeconds: 1
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 5
+    httpGet:
+      path: "/webclient/"
+      port: 8443
+      scheme: "HTTP"
+  resources:
+    limits:
+      memory: "512Mi"
+    requests:
+      cpu: 0.1
+      memory: "512Mi"
+  image:
+    name: webclient
+    pullPolicy: IfNotPresent
+    tag: null
+  tolerations:
+  - key: "node.kubernetes.io/not-ready"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 20
+  - key: "node.kubernetes.io/unreachable"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 20
+
+
+
+# Users and Security Services (merged from users-chart)
+security:
+  env:
+    JAVA_TOOL_OPTIONS:
+      value: null
+    JAVA_OPTS:
+      value: "-XshowSettings:vm -XX:MaxRAMPercentage=70.0 -Dnirmata.awssubscription.enable=true"
+  logLevel: "warn"
+  replicas: 1
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - namespaces: []
+        labelSelector:
+          matchLabels: {}
+          matchExpressions:
+          - key: "nirmata.io/deployment.name"
+            operator: "In"
+            values:
+            - "security"
+        topologyKey: "kubernetes.io/hostname"
+  resources:
+    limits:
+      memory: "512Mi"
+    requests:
+      memory: "400Mi"
+      cpu: 0.1
+  image:
+    name: security
+    pullPolicy: IfNotPresent
+    tag: null
+  livenessProbe:
+    initialDelaySeconds: 120
+    timeoutSeconds: 1
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 3
+    httpGet:
+      path: "/security/status"
+      port: 8443
+      scheme: "HTTPS"
+  readinessProbe:
+    initialDelaySeconds: 10
+    timeoutSeconds: 1
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 3
+    httpGet:
+      path: "/security/status"
+      port: 8443
+      scheme: "HTTPS"
+  tolerations:
+  - key: "node.kubernetes.io/not-ready"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 20
+  - key: "node.kubernetes.io/unreachable"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 20
+
+users:
+  env:
+    JAVA_TOOL_OPTIONS:
+      value: null
+    JAVA_OPTS:
+      value: null
+  logLevel: "warn"
+  replicas: 1
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - namespaces: []
+        labelSelector:
+          matchLabels: {}
+          matchExpressions:
+          - key: "nirmata.io/deployment.name"
+            operator: "In"
+            values:
+            - "users"
+        topologyKey: "kubernetes.io/hostname"
+  resources:
+    limits:
+      memory: "1536Mi"
+    requests:
+      memory: "100Mi"
+      cpu: 0.2
+  image:
+    name: users
+    pullPolicy: IfNotPresent
+    tag: null
+  livenessProbe:
+    initialDelaySeconds: 120
+    timeoutSeconds: 1
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 3
+    httpGet:
+      path: "/users/health"
+      port: 8443
+      scheme: "HTTPS"
+  readinessProbe:
+    initialDelaySeconds: 10
+    timeoutSeconds: 1
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 3
+    httpGet:
+      path: "/users/health"
+      port: 8443
+      scheme: "HTTPS"
+  tolerations:
+  - key: "node.kubernetes.io/not-ready"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 20
+  - key: "node.kubernetes.io/unreachable"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 20
+

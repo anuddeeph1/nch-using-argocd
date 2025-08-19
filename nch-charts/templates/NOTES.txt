@@ -1,0 +1,12 @@
+Release {{ .Release.Name }} is installed.
+
+{{- if .Values.postreq.enabled }}
+
+Thank you for installing {{ .Chart.Name }}.
+
+Your resources are in the namespace {{ include "helmchart.namespace" . | quote }}.
+NCH will be accessible on {{ .Values.global.product.url }} once all resources are in "Ready" state. 
+To check if all resources are "Running" and "Ready", try:
+    
+  $ kubectl get po -n {{ include "helmchart.namespace" . | quote }} -w
+{{- end }}

@@ -1,0 +1,37 @@
+# Step 2: Deploy MongoDB and Kafka Only
+# This must be deployed after step 1 (prereq) to use the installed CRDs
+# Usage: helm install -f values-base.yaml -f values-{dev|prod}.yaml -f values-step2-mongodb-kafka.yaml
+
+# Step 2 global configuration overrides
+global:
+  mongo:
+    hostedMongo: false  # Step 2 uses Community Operator, not hosted MongoDB
+
+# Component enablement for Step 2
+base:
+  enabled: true
+
+# Disable other components for step 2
+postreq:
+  enabled: false
+
+prereq:
+  enabled: false
+
+users:
+  enabled: false
+
+others:
+  enabled: false
+
+# Step 2 specific MongoDB configuration (inherits defaults from base)
+mongodb-chart:
+  # MongoDB-specific configuration inherits from base
+  # The hostedMongo setting is now configured at global level above
+  enabled: true
+
+# Step 2 specific Kafka configuration (inherits defaults from base)
+kafka-chart:
+  # Kafka configuration inherits from base values
+  # Additional step-specific overrides can be added here
+  enabled: true 

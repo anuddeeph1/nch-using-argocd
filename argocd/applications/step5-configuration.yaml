@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nch-step5-configuration
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+    argocd.argoproj.io/hook: PostSync
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: nch-charts
+  source:
+    repoURL: https://github.com/your-org/nch-charts  # Replace with your repo URL
+    targetRevision: HEAD
+    path: scripts/deployment/steps
+    plugin:
+      name: kustomize-build-with-helm
+      env:
+        - name: ENVIRONMENT
+          value: "dev"  # Change to "prod" for production
+        - name: SCRIPT_NAME
+          value: "05-configuration.sh"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nch-dev1  # Change to nch-pe for production
+  syncPolicy:
+    # Manual sync for configuration step due to API calls
+    syncOptions:
+      - ServerSideApply=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m

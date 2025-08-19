@@ -1,0 +1,488 @@
+#!/bin/bash
+
+# Configure Feature Flags in MongoDB Tenant Document
+# Standalone script for troubleshooting and manual feature flag configuration
+# Usage: ./scripts/configure-feature-flags.sh [namespace]
+
+set -euo pipefail
+
+# Show help if requested
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+    cat << 'EOF'
+🎯 Nirmata Feature Flags Configuration Script
+
+DESCRIPTION:
+    Standalone script to configure feature flags in MongoDB tenant document.
+    Useful for troubleshooting when Step 5 completes but feature flags aren't set.
+
+USAGE:
+    ./scripts/utils/configure-feature-flags.sh [namespace] [--debug]
+
+ARGUMENTS:
+    namespace    Target Kubernetes namespace (default: nch-dev)
+    --debug      Enable verbose debugging output
+
+EXAMPLES:
+    ./scripts/utils/configure-feature-flags.sh nch-dev
+    ./scripts/utils/configure-feature-flags.sh nch-prod
+    ./scripts/utils/configure-feature-flags.sh nch-dev --debug
+
+FEATURES CONFIGURED (20 total):
+    • policy-exceptions          • modern-dashboard
+    • cis-k8s-benchmark         • policy-studio  
+    • auto-namespace-assignment • policy-studio-ai
+    • auto-remediation          • nch-quick-start
+    • scan-report               • ai_remediation
+    • git-policy-set            • suppress-violation
+    • enable-security-role      • new-cluster-onboarding
+    • gitops-policyset          • cluster-policy-reports
+    • enable-policy-sets        • invite-users
+    • compliance-per-namespace  • authentication-settings
+
+REQUIREMENTS:
+    • MongoDB deployed in the target namespace
+    • Tenant document already created (Step 5 partially completed)
+    • kubectl access to the cluster
+    • MongoDB credentials (will be prompted securely)
+
+WHAT IT DOES:
+    1. Connects to MongoDB in the specified namespace
+    2. Finds the Users-<namespace> database
+    3. Updates all Tenant documents with feature flags
+    4. Verifies the configuration was successful
+    5. Shows before/after comparison
+
+This script is safe to run multiple times and will show current state.
+EOF
+    exit 0
+fi
+
+# Configuration
+NAMESPACE="${1:-nch-dev}"
+DEBUG_MODE=false
+
+# Check for debug flag
+if [[ "${2:-}" == "--debug" ]] || [[ "${1:-}" == "--debug" ]]; then
+    DEBUG_MODE=true
+    if [[ "${1:-}" == "--debug" ]]; then
+        NAMESPACE="nch-dev"
+    fi
+fi
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+NC='\033[0m' # No Color
+
+log() { echo -e "${BLUE}[INFO]${NC} $*"; }
+success() { echo -e "${GREEN}[SUCCESS]${NC} $*"; }
+warning() { echo -e "${YELLOW}[WARNING]${NC} $*"; }
+error() { echo -e "${RED}[ERROR]${NC} $*"; }
+debug() { echo -e "${PURPLE}[DEBUG]${NC} $*"; }
+
+# Feature flags to be configured
+FEATURE_FLAGS=(
+    "policy-exceptions"
+    "cis-k8s-benchmark" 
+    "auto-namespace-assignment"
+    "auto-remediation"
+    "scan-report"
+    "git-policy-set"
+    "enable-security-role"
+    "gitops-policyset"
+    "enable-policy-sets"
+    "compliance-per-namespace"
+    "modern-dashboard"
+    "policy-studio"
+    "policy-studio-ai"
+    "nch-quick-start"
+    "ai_remediation"
+    "suppress-violation"
+    "new-cluster-onboarding"
+    "cluster-policy-reports"
+    "invite-users"
+    "authentication-settings"
+)
+
+log "🎯 Nirmata Feature Flags Configuration Script"
+log "📁 Target namespace: $NAMESPACE"
+log "🏷️  Features to configure: ${#FEATURE_FLAGS[@]} features"
+
+# Prompt for MongoDB credentials securely
+echo -n "🔐 Enter MongoDB username [admin]: "
+read MONGODB_USERNAME
+MONGODB_USERNAME=${MONGODB_USERNAME:-admin}
+
+echo -n "🔐 Enter MongoDB password for user '$MONGODB_USERNAME': "
+read -s MONGODB_PASSWORD
+echo ""
+
+if [[ -z "$MONGODB_PASSWORD" ]]; then
+    error "❌ Password cannot be empty"
+    exit 1
+fi
+
+# Get MongoDB pod
+log "🔍 Finding MongoDB pod in namespace '$NAMESPACE'..."
+MONGODB_POD=$(kubectl get pod -n "$NAMESPACE" -l app=mongodb -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+
+if [[ -z "$MONGODB_POD" ]]; then
+    error "❌ MongoDB pod not found in namespace $NAMESPACE"
+    error "   Please check that MongoDB is deployed and the namespace is correct"
+    exit 1
+fi
+
+success "📂 Found MongoDB pod: $MONGODB_POD"
+
+# Test MongoDB connection
+log "🧪 Testing MongoDB connection..."
+if ! kubectl exec "$MONGODB_POD" -n "$NAMESPACE" -c mongod -- mongosh \
+    --username "$MONGODB_USERNAME" \
+    --password "$MONGODB_PASSWORD" \
+    --authenticationDatabase admin \
+    --eval "db.runCommand('ping')" >/dev/null 2>&1; then
+    error "❌ Failed to connect to MongoDB - check your credentials"
+    exit 1
+fi
+
+success "✅ MongoDB connection successful"
+
+# Test basic MongoDB commands
+log "🔍 Testing basic MongoDB operations..."
+BASIC_TEST_OUTPUT=$(kubectl exec "$MONGODB_POD" -n "$NAMESPACE" -c mongod -- mongosh \
+    --username "$MONGODB_USERNAME" \
+    --password "$MONGODB_PASSWORD" \
+    --authenticationDatabase admin \
+    --eval "print('server_info:' + db.version()); print('current_db:' + db.getName());" 2>&1)
+
+if [[ "$DEBUG_MODE" == "true" ]]; then
+    debug "Basic test output: $BASIC_TEST_OUTPUT"
+fi
+
+if echo "$BASIC_TEST_OUTPUT" | grep -q "server_info:"; then
+    SERVER_VERSION=$(echo "$BASIC_TEST_OUTPUT" | grep "server_info:" | cut -d: -f2)
+    success "✅ MongoDB commands working (version: $SERVER_VERSION)"
+else
+    warning "⚠️  MongoDB commands may not be executing properly"
+    if [[ "$DEBUG_MODE" == "true" ]]; then
+        debug "Basic test raw output: $BASIC_TEST_OUTPUT"
+    fi
+fi
+
+# Construct database name (Users-<namespace>)
+DB_NAME="Users-$NAMESPACE"
+log "🗄️  Target database: $DB_NAME"
+
+# Check if database exists
+log "🔍 Checking if database '$DB_NAME' exists..."
+
+DB_LIST_OUTPUT=$(kubectl exec "$MONGODB_POD" -n "$NAMESPACE" -c mongod -- mongosh \
+    --username "$MONGODB_USERNAME" \
+    --password "$MONGODB_PASSWORD" \
+    --authenticationDatabase admin \
+    --eval "db.adminCommand('listDatabases').databases.forEach(function(db) { print('db:' + db.name); })" 2>&1)
+
+if [[ "$DEBUG_MODE" == "true" ]]; then
+    debug "Database list output: $DB_LIST_OUTPUT"
+fi
+
+if echo "$DB_LIST_OUTPUT" | grep -q "db:$DB_NAME"; then
+    success "✅ Database '$DB_NAME' found"
+else
+    error "❌ Database '$DB_NAME' not found"
+    error "   This usually means Step 5 hasn't been run or tenant setup failed"
+    log ""
+    log "📋 Available databases:"
+    echo "$DB_LIST_OUTPUT" | grep "db:" | cut -d: -f2 | while read -r dbname; do
+        log "  - $dbname"
+    done
+    exit 1
+fi
+
+# Check current tenant documents
+log "🔍 Checking existing tenant documents..."
+
+TENANT_COUNT_OUTPUT=$(kubectl exec "$MONGODB_POD" -n "$NAMESPACE" -c mongod -- mongosh \
+    --username "$MONGODB_USERNAME" \
+    --password "$MONGODB_PASSWORD" \
+    --authenticationDatabase admin \
+    --eval "print('count:' + db.getSiblingDB('$DB_NAME').Tenant.countDocuments({}))" 2>&1)
+
+if [[ "$DEBUG_MODE" == "true" ]]; then
+    debug "Tenant count output: $TENANT_COUNT_OUTPUT"
+fi
+
+TENANT_COUNT=$(echo "$TENANT_COUNT_OUTPUT" | grep "count:" | cut -d: -f2 || echo "0")
+TENANT_COUNT=$(echo "$TENANT_COUNT" | tr -d ' ')
+TENANT_COUNT=${TENANT_COUNT:-0}
+
+if [[ "$TENANT_COUNT" == "0" ]]; then
+    error "❌ No tenant documents found in database '$DB_NAME'"
+    error "   Please run Step 5 first to create tenant configuration"
+    
+    # Try to show what collections exist in the database
+    log "🔍 Checking what collections exist in database '$DB_NAME'..."
+    COLLECTIONS_OUTPUT=$(kubectl exec "$MONGODB_POD" -n "$NAMESPACE" -c mongod -- mongosh \
+        --username "$MONGODB_USERNAME" \
+        --password "$MONGODB_PASSWORD" \
+        --authenticationDatabase admin \
+        --eval "db.getSiblingDB('$DB_NAME').listCollectionNames().forEach(function(name) { print('collection:' + name); })" 2>&1)
+    
+    if echo "$COLLECTIONS_OUTPUT" | grep -q "collection:"; then
+        log "📋 Collections found:"
+        echo "$COLLECTIONS_OUTPUT" | grep "collection:" | cut -d: -f2 | while read -r collection; do
+            log "  - $collection"
+        done
+    else
+        warning "⚠️  No collections found or unable to list collections"
+    fi
+    
+    exit 1
+fi
+
+log "📊 Found $TENANT_COUNT tenant document(s)"
+
+# Show current feature flags (if any)
+log "🔍 Checking current feature flags..."
+
+CURRENT_FLAGS_SCRIPT='
+var dbName = "'$DB_NAME'";
+var tenant = db.getSiblingDB(dbName).Tenant.findOne({});
+if (tenant && tenant.features) {
+    print("CURRENT_START");
+    print("currentCount:" + tenant.features.length);
+    tenant.features.sort().forEach(function(feature) {
+        print("currentFeature:" + feature);
+    });
+    print("CURRENT_END");
+} else {
+    print("CURRENT_NONE");
+}
+'
+
+CURRENT_OUTPUT=$(kubectl exec "$MONGODB_POD" -n "$NAMESPACE" -c mongod -- mongosh \
+    --username "$MONGODB_USERNAME" \
+    --password "$MONGODB_PASSWORD" \
+    --authenticationDatabase admin \
+    --eval "$CURRENT_FLAGS_SCRIPT" 2>&1)
+
+if [[ "$DEBUG_MODE" == "true" ]]; then
+    debug "MongoDB current flags output: $CURRENT_OUTPUT"
+fi
+
+if echo "$CURRENT_OUTPUT" | grep -q "CURRENT_START"; then
+    CURRENT_COUNT=$(echo "$CURRENT_OUTPUT" | grep "currentCount:" | cut -d: -f2 || echo "0")
+    CURRENT_COUNT=$(echo "$CURRENT_COUNT" | tr -d ' ')
+    CURRENT_COUNT=${CURRENT_COUNT:-0}
+    
+    log "📋 Current features ($CURRENT_COUNT):"
+    
+    if [[ "$CURRENT_COUNT" -gt 0 ]]; then
+        echo "$CURRENT_OUTPUT" | grep "currentFeature:" | cut -d: -f2 | while read -r feature; do
+            log "   • $feature"
+        done
+    else
+        log "   (no features currently configured)"
+    fi
+elif echo "$CURRENT_OUTPUT" | grep -q "CURRENT_NONE"; then
+    warning "⚠️  No features currently configured in tenant document"
+else
+    warning "⚠️  Could not read current feature flags"
+    if [[ "$DEBUG_MODE" == "true" ]]; then
+        debug "Raw MongoDB output: $CURRENT_OUTPUT"
+    fi
+fi
+
+echo ""
+
+# Convert feature flags array to JSON format for MongoDB
+log "🔧 Converting feature flags to JSON format..."
+
+# Create JSON array manually (more reliable than jq)
+FEATURES_JSON="["
+for i in "${!FEATURE_FLAGS[@]}"; do
+    if [[ $i -gt 0 ]]; then
+        FEATURES_JSON+=", "
+    fi
+    FEATURES_JSON+="\"${FEATURE_FLAGS[i]}\""
+done
+FEATURES_JSON+="]"
+
+if [[ "$DEBUG_MODE" == "true" ]]; then
+    debug "Features JSON: $FEATURES_JSON"
+fi
+
+success "✅ Feature flags JSON prepared (${#FEATURE_FLAGS[@]} features)"
+
+# Confirm with user
+log "🎯 Ready to configure ${#FEATURE_FLAGS[@]} feature flags"
+log "📋 Features to be set:"
+for i in "${!FEATURE_FLAGS[@]}"; do
+    log "   $((i+1)). ${FEATURE_FLAGS[i]}"
+done
+
+echo ""
+read -p "❓ Do you want to proceed with feature flag configuration? (yes/no): " confirmation
+if [[ "$confirmation" != "yes" ]]; then
+    log "🛑 Operation cancelled by user"
+    exit 0
+fi
+
+# MongoDB command to update feature flags  
+MONGO_SCRIPT='
+var dbName = "'$DB_NAME'";
+var features = '$FEATURES_JSON';
+try {
+    var result = db.getSiblingDB(dbName).Tenant.updateMany({}, { $set: { "features": features } });
+    print("RESULT_START");
+    print("matchedCount:" + result.matchedCount);
+    print("modifiedCount:" + result.modifiedCount);
+    print("featuresConfigured:" + features.length);
+    print("RESULT_END");
+} catch (error) {
+    print("ERROR_START");
+    print("error:" + error);
+    print("ERROR_END");
+}
+'
+
+log ""
+log "🔧 Updating tenant feature flags..."
+
+if [[ "$DEBUG_MODE" == "true" ]]; then
+    debug "Executing MongoDB script:"
+    debug "$MONGO_SCRIPT"
+fi
+
+# Execute the update and capture output (without --quiet to see all output)
+UPDATE_OUTPUT=$(kubectl exec "$MONGODB_POD" -n "$NAMESPACE" -c mongod -- mongosh \
+    --username "$MONGODB_USERNAME" \
+    --password "$MONGODB_PASSWORD" \
+    --authenticationDatabase admin \
+    --eval "$MONGO_SCRIPT" 2>&1)
+
+if [[ "$DEBUG_MODE" == "true" ]]; then
+    debug "MongoDB update output: $UPDATE_OUTPUT"
+fi
+
+# Parse the results
+if echo "$UPDATE_OUTPUT" | grep -q "RESULT_START"; then
+    MATCHED_COUNT=$(echo "$UPDATE_OUTPUT" | grep "matchedCount:" | cut -d: -f2 || echo "0")
+    MODIFIED_COUNT=$(echo "$UPDATE_OUTPUT" | grep "modifiedCount:" | cut -d: -f2 || echo "0")
+    FEATURES_COUNT=$(echo "$UPDATE_OUTPUT" | grep "featuresConfigured:" | cut -d: -f2 || echo "0")
+    
+    # Remove any whitespace
+    MATCHED_COUNT=$(echo "$MATCHED_COUNT" | tr -d ' ')
+    MODIFIED_COUNT=$(echo "$MODIFIED_COUNT" | tr -d ' ')
+    FEATURES_COUNT=$(echo "$FEATURES_COUNT" | tr -d ' ')
+    
+    # Set defaults if empty
+    MATCHED_COUNT=${MATCHED_COUNT:-0}
+    MODIFIED_COUNT=${MODIFIED_COUNT:-0}
+    FEATURES_COUNT=${FEATURES_COUNT:-0}
+    
+    if [[ "$MATCHED_COUNT" -gt 0 ]]; then
+        success "✅ Update completed successfully!"
+        log "  📊 Matched documents: $MATCHED_COUNT"
+        log "  📝 Modified documents: $MODIFIED_COUNT" 
+        log "  🎯 Features configured: $FEATURES_COUNT"
+    else
+        error "❌ No tenant documents found to update"
+        exit 1
+    fi
+elif echo "$UPDATE_OUTPUT" | grep -q "ERROR_START"; then
+    ERROR_MSG=$(echo "$UPDATE_OUTPUT" | grep "error:" | cut -d: -f2- || echo "Unknown error")
+    error "❌ MongoDB script execution failed"
+    error "Error: $ERROR_MSG"
+    exit 1
+else
+    error "❌ Failed to update feature flags - unexpected output format"
+    error "MongoDB output: $UPDATE_OUTPUT"
+    log ""
+    log "🔍 Troubleshooting steps:"
+    log "  1. Check if tenant document exists: db.Tenant.findOne({})"
+    log "  2. Verify MongoDB connectivity manually"
+    log "  3. Run with --debug flag for detailed output"
+    exit 1
+fi
+
+echo ""
+
+# Enhanced verification step - read back the actual feature flags
+log "🔍 Verifying feature flags were actually set..."
+
+# Initialize verification result
+VERIFICATION_SUCCESS=false
+
+VERIFY_SCRIPT='
+var dbName = "'$DB_NAME'";
+var tenant = db.getSiblingDB(dbName).Tenant.findOne({});
+if (tenant && tenant.features) {
+    print("VERIFICATION_START");
+    print("featureCount:" + tenant.features.length);
+    tenant.features.sort().forEach(function(feature) {
+        print("feature:" + feature);
+    });
+    print("VERIFICATION_END");
+} else {
+    print("VERIFICATION_FAILED");
+    print("No features found in tenant document");
+}
+'
+
+VERIFY_OUTPUT=$(kubectl exec "$MONGODB_POD" -n "$NAMESPACE" -c mongod -- mongosh \
+    --username "$MONGODB_USERNAME" \
+    --password "$MONGODB_PASSWORD" \
+    --authenticationDatabase admin \
+    --eval "$VERIFY_SCRIPT" 2>&1)
+
+if [[ "$DEBUG_MODE" == "true" ]]; then
+    debug "MongoDB verification output: $VERIFY_OUTPUT"
+fi
+
+# Parse verification results
+if echo "$VERIFY_OUTPUT" | grep -q "VERIFICATION_START"; then
+    ACTUAL_COUNT=$(echo "$VERIFY_OUTPUT" | grep "featureCount:" | cut -d: -f2 || echo "0")
+    ACTUAL_COUNT=$(echo "$ACTUAL_COUNT" | tr -d ' ')
+    ACTUAL_COUNT=${ACTUAL_COUNT:-0}
+    
+    if [[ "$ACTUAL_COUNT" -eq "${#FEATURE_FLAGS[@]}" ]]; then
+        success "✅ Verification successful - $ACTUAL_COUNT features confirmed in database"
+        log "📋 Feature flags currently active:"
+        
+        # Show the actual features from database
+        echo "$VERIFY_OUTPUT" | grep "feature:" | cut -d: -f2 | while read -r feature; do
+            log "   ✓ $feature"
+        done
+        
+        VERIFICATION_SUCCESS=true
+    else
+        warning "⚠️  Feature count mismatch!"
+        warning "   Expected: ${#FEATURE_FLAGS[@]} features"
+        warning "   Found: $ACTUAL_COUNT features"
+        VERIFICATION_SUCCESS=false
+    fi
+elif echo "$VERIFY_OUTPUT" | grep -q "VERIFICATION_FAILED"; then
+    error "❌ Verification failed - no features found in tenant document"
+    error "   The update may not have worked properly"
+    VERIFICATION_SUCCESS=false
+else
+    error "❌ Verification failed - unable to read tenant document"
+    error "MongoDB output: $VERIFY_OUTPUT"
+    VERIFICATION_SUCCESS=false
+fi
+
+echo ""
+
+if [[ "${VERIFICATION_SUCCESS:-false}" == "true" ]]; then
+    success "🏁 Feature flags configuration script completed successfully!"
+    log "💡 All ${#FEATURE_FLAGS[@]} features are now active in the Nirmata platform"
+    log "🔄 You may need to refresh your browser or re-login to see new features"
+else
+    error "🚨 Feature flags configuration completed but verification failed"
+    error "   Please check the MongoDB database manually or re-run the script"
+    exit 1
+fi 

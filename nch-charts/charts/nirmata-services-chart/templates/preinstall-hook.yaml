@@ -1,0 +1,72 @@
+{{- if .Values.users.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-delete-policy": hook-succeeded
+  name: base-check
+  namespace: {{ include "helmchart.namespace" . | quote }}
+spec:
+  template:
+    metadata:
+      namespace: {{ include "helmchart.namespace" . | quote }}
+    spec:
+      serviceAccountName: preinstallhook-service
+      imagePullSecrets:
+      - name: {{ .Values.global.imagePullSecrets.name | default "registry-secret" }}
+      containers:
+        - name: job
+          image: "{{ .Values.global.common.registry }}/{{ .Values.global.common.kubectlImage }}"
+          imagePullPolicy: Always
+          command: ["/bin/bash"]
+{{- if .Values.global.mongo.hostedMongo }}
+          args:
+            - -c
+            - >-
+              for oper_name in kafka kafka-controller zk ; do 
+                oper_nsp={{ include "helmchart.namespace" . | quote }};
+                echo "1. Waiting for $oper_nsp/$oper_name to get ready...";
+                while [ -z $operator_sts ]; 
+                do
+                  kubectl get sts -n $oper_nsp $oper_name -o jsonpath="{.metadata.name}"
+                  operator_sts=$(kubectl get sts -n $oper_nsp $oper_name -o jsonpath="{.metadata.name}" 2>/dev/null) && echo Waiting;
+                  sleep 5;
+                done;
+                oper_exp_replicas=$(kubectl get sts -n $oper_nsp $oper_name -o jsonpath="{.status.replicas}" 2>/dev/null);
+                oper_ready_replicas=$(kubectl get sts -n $oper_nsp $oper_name -o jsonpath="{.status.readyReplicas}" 2>/dev/null);
+                echo "StatefulSet created. $oper_ready_replicas out of $oper_exp_replicas replicas ready";
+                while [ "$oper_ready_replicas" != "$oper_exp_replicas" ];
+                do
+                  oper_ready_replicas=$(kubectl get sts -n $oper_nsp $oper_name -o jsonpath="{.status.readyReplicas}" 2>/dev/null) && echo Waiting;
+                  sleep 5;
+                done;
+                echo "Dependency $oper_name ready";
+              done
+{{- else }}
+          args:
+            - -c
+            - >-
+              for oper_name in mongodb kafka kafka-controller zk ; do 
+                oper_nsp={{ include "helmchart.namespace" . | quote }};
+                echo "1. Waiting for $oper_nsp/$oper_name to get ready...";
+                while [ -z $operator_sts ]; 
+                do
+                  kubectl get sts -n $oper_nsp $oper_name -o jsonpath="{.metadata.name}"
+                  operator_sts=$(kubectl get sts -n $oper_nsp $oper_name -o jsonpath="{.metadata.name}" 2>/dev/null) && echo Waiting;
+                  sleep 5;
+                done;
+                oper_exp_replicas=$(kubectl get sts -n $oper_nsp $oper_name -o jsonpath="{.status.replicas}" 2>/dev/null);
+                oper_ready_replicas=$(kubectl get sts -n $oper_nsp $oper_name -o jsonpath="{.status.readyReplicas}" 2>/dev/null);
+                echo "StatefulSet created. $oper_ready_replicas out of $oper_exp_replicas replicas ready";
+                while [ "$oper_ready_replicas" != "$oper_exp_replicas" ];
+                do
+                  oper_ready_replicas=$(kubectl get sts -n $oper_nsp $oper_name -o jsonpath="{.status.readyReplicas}" 2>/dev/null) && echo Waiting;
+                  sleep 5;
+                done;
+                echo "Dependency $oper_name ready";
+              done
+{{- end }}
+      restartPolicy: Never
+  backoffLimit: 4
+{{- end }}

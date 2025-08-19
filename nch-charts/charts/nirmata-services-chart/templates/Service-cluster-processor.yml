@@ -1,0 +1,20 @@
+---
+apiVersion: "v1"
+kind: "Service"
+metadata:
+  name: "cluster-processor"
+  namespace: {{ include "helmchart.namespace" . | quote }}
+  labels:
+    nirmata.io/service.name: "cluster-processor"
+spec:
+  externalIPs: []
+  loadBalancerSourceRanges: []
+  sessionAffinity: "None"
+  type: "ClusterIP"
+  selector:
+    nirmata.io/service.name: "cluster-processor"
+  ports:
+  - name: "https"
+    port: 443
+    protocol: "TCP"
+    targetPort: 8443

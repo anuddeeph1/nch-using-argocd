@@ -1,0 +1,139 @@
+---
+kind: "Deployment"
+apiVersion: "apps/v1"
+metadata:
+  name: "webclient"
+  namespace: {{ include "helmchart.namespace" . | quote }}
+  labels:
+    nirmata.io/deployment.name: "webclient"
+    nirmata.io/service.name: "webclient"
+    nirmata.io/type: "app"
+spec:
+  progressDeadlineSeconds: 2147483647
+  replicas: {{ .Values.webclient.replicas }}
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      nirmata.io/service.name: "webclient"
+    matchExpressions: []
+  strategy:
+    type: "RollingUpdate"
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      namespace: {{ include "helmchart.namespace" . | quote }}
+      labels:
+        nirmata.io/deployment.name: "webclient"
+        nirmata.io/service.name: "webclient"
+        nirmata.io/type: "app"
+        {{- range .Values.webclient.labels }}
+        {{- range $key, $value := . }}
+        {{ $key }}: {{ $value }}
+        {{- end }}
+        {{- end }}
+    spec:
+      serviceAccountName: "webclient-service"
+      automountServiceAccountToken: false
+      restartPolicy: "Always"
+      terminationGracePeriodSeconds: 30
+      nodeSelector: {}
+      schedulerName: "default-scheduler"
+      priorityClassName: "nirmata-app-critical"
+      dnsPolicy: "ClusterFirst"
+      imagePullSecrets:
+      - name: {{ .Values.global.imagePullSecrets.name | default "registry-secret" }}
+      containers:
+      - name: "webclient"
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+{{- if ( ne .Values.global.provider "openshift" ) }}
+          seccompProfile:
+            type: RuntimeDefault
+{{- end }}
+          capabilities:
+            drop:
+              - ALL
+          runAsNonRoot: true
+{{- if .Values.webclient.image.tag }}
+        image: "{{ .Values.global.common.registry }}/{{ .Values.webclient.image.name }}:{{ .Values.webclient.image.tag }}"
+{{- else }}
+        image: "{{ .Values.global.common.registry }}/{{ .Values.webclient.image.name }}:{{ .Values.global.common.version }}"
+{{- end }}  
+        command: []
+        args: []
+        terminationMessagePath: "/dev/termination-log"
+        terminationMessagePolicy: "File"
+        imagePullPolicy: {{ .Values.webclient.image.pullPolicy }}
+        ports:
+        - name: "https"
+          containerPort: 8443
+          protocol: "TCP"
+        env:
+        - name: "JAVA_TOOL_OPTIONS"
+{{- if .Values.webclient.env.JAVA_TOOL_OPTIONS.value }}
+          value: {{ .Values.webclient.env.JAVA_TOOL_OPTIONS.value }}
+{{- else }}
+          value: {{ .Values.global.env.JAVA_TOOL_OPTIONS.value }}
+{{- end }}
+        - name: "JAVA_OPTS"
+{{- if .Values.webclient.env.JAVA_OPTS.value }}
+          value: {{ .Values.webclient.env.JAVA_OPTS.value }}
+{{- else }}
+          value: {{ .Values.global.env.JAVA_OPTS.value }}
+{{- end }}
+        - name: "nirmata.environment.name"
+          valueFrom:
+            fieldRef:
+              apiVersion: "v1"
+              fieldPath: "metadata.namespace"
+        - name: "HTTP_PROXY"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "HTTP_PROXY"
+        - name: "HTTPS_PROXY"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "HTTPS_PROXY"
+        - name: "NO_PROXY"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "NO_PROXY"
+        - name: "http_proxy"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "http_proxy"
+        - name: "https_proxy"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "https_proxy"
+        - name: "no_proxy"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "no_proxy"
+        - name: "eureka.registration.enabled"
+          value: "false"
+        - name: "nirmata.service.dnsclient"
+          value: "true"
+        livenessProbe:
+{{ toYaml .Values.webclient.livenessProbe | indent 10 }}
+        readinessProbe:
+{{ toYaml .Values.webclient.readinessProbe | indent 10 }}
+        resources:
+{{ toYaml .Values.webclient.resources | indent 10 }}
+      securityContext:
+        supplementalGroups: []
+{{- if ( gt ( int .Values.webclient.replicas ) 1 ) }}
+      affinity:
+{{ toYaml .Values.webclient.affinity | indent 8 }}
+{{- end}}
+      tolerations:
+{{ toYaml .Values.webclient.tolerations | indent 8 }}

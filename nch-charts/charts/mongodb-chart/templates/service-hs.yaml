@@ -1,0 +1,23 @@
+{{- if not .Values.global.mongo.hostedMongo }}
+apiVersion: "v1"
+kind: "Service"
+metadata:
+  annotations: {}
+  name: "mongodb-hs"
+  namespace: {{ include "helmchart.namespace" . | quote }}
+  labels:
+    name: "mongodb-hs"
+    nirmata.io/component: "mongodb"
+spec:
+  clusterIP: "None"
+  externalIPs: []
+  loadBalancerSourceRanges: []
+  sessionAffinity: "None"
+  type: "ClusterIP"
+  selector:
+    app: "mongodb"
+    nirmata.io/component: "mongodb"
+  ports:
+  - port: 27017
+    targetPort: 27017
+{{- end }}

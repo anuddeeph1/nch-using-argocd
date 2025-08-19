@@ -1,0 +1,33 @@
+# Step 3: Deploy All Nirmata Services Only
+# Usage: helm install -f values-base.yaml -f values-{dev|prod}.yaml -f values-step3-nirmata-services.yaml
+# Prerequisites: Steps 1 and 2 must be completed successfully
+
+# Enable Nirmata application services
+users:
+  enabled: true
+others:
+  enabled: true
+
+# Configure users and security services within nirmata-services-chart
+nirmata-services-chart:
+  # Enable users service
+  users:
+    enabled: true
+  
+  # Enable security service  
+  security:
+    enabled: true
+
+# Disable other components for this step
+prereq:
+  enabled: false
+base:
+  enabled: false
+postreq:
+  enabled: false
+kafka-chart:
+  enabled: false
+mongodb-chart:
+  enabled: false
+haproxy-chart:
+  enabled: false

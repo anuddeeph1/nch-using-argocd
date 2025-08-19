@@ -1,0 +1,15 @@
+{{- if ( eq .Values.global.provider "openshift" ) }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: system:openshift:scc:haproxy
+  namespace: {{ include "helmchart.namespace" . | quote }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:openshift:scc:anyuid
+subjects:
+- kind: ServiceAccount
+  name: haproxy-service
+  namespace: {{ include "helmchart.namespace" . | quote }}
+{{- end }}

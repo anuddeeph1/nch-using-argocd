@@ -1,0 +1,63 @@
+# Test values for nirmata-services.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+haproxy:
+  logLevel: "warn"
+  replicas: 1
+  
+  # Service configuration
+  service:
+    type: "NodePort"  # Default to NodePort, can be overridden to LoadBalancer
+    externalTrafficPolicy: "Cluster"
+    sessionAffinity: "None"
+    httpsNodePort: 30341
+    statsNodePort: 30343
+    annotations: {}
+    externalIPs: []
+    loadBalancerSourceRanges: []
+  
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - namespaces: []
+        labelSelector:
+          matchLabels: {}
+          matchExpressions:
+          - key: "nirmata.io/deployment.name"
+            operator: "In"
+            values:
+            - "haproxy"
+        topologyKey: "kubernetes.io/hostname"
+  resources:
+    limits:
+      memory: "512Mi"
+    requests:
+      memory: "100Mi"
+  image:
+    name: haproxy
+    pullPolicy: IfNotPresent
+    tag: null
+  livenessProbe:
+    timeoutSeconds: 1
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 3
+    tcpSocket:
+      port: 8443
+  readinessProbe:
+    timeoutSeconds: 1
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 3
+    tcpSocket:
+      port: 8443
+  tolerations:
+  - key: "node.kubernetes.io/not-ready"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 20
+  - key: "node.kubernetes.io/unreachable"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 20

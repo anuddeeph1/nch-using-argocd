@@ -1,0 +1,24 @@
+kind: "ConfigMap"
+apiVersion: "v1"
+data:
+  nirmata.url: {{ .Values.global.product.url | quote }}
+  http_proxy: {{ .Values.global.proxy.http_proxy | default "" | quote }}
+  no_proxy: {{ .Values.global.proxy.no_proxy | default "" | quote }}
+  NO_PROXY: {{ .Values.global.proxy.NO_PROXY | default "" | quote }}
+  product: {{ .Values.global.product.product | quote }}
+  productName: {{ .Values.global.product.productName | quote }}
+  productVersion: "pe-{{ .Values.global.common.version }}"
+  isNchOnly: {{ .Values.global.product.isNchOnly | quote }}
+  https_proxy: {{ .Values.global.proxy.https_proxy | default "" | quote }}
+  HTTPS_PROXY: {{ .Values.global.proxy.HTTPS_PROXY | default "" | quote }}
+  HTTP_PROXY: {{ .Values.global.proxy.HTTP_PROXY | default "" | quote }}
+  tunnelServerAddress: {{ .Values.global.common.tunnelServerAddress | quote }}
+  tenancyModel: {{ .Values.global.tenancyModel | quote }}
+binaryData: {}
+metadata:
+  annotations: {}
+  name: "nirmata-config"
+  namespace: {{ include "helmchart.namespace" . | quote }}
+  labels:
+    nirmata.io/configmap.name: "nirmata-config"
+    nirmata.io/type: "app"

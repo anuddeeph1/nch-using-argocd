@@ -1,0 +1,21 @@
+---
+apiVersion: "v1"
+kind: "Service"
+metadata:
+  annotations: {}
+  name: "policy-studio"
+  namespace: {{ include "helmchart.namespace" . | quote }}
+  labels:
+    nirmata.io/service.name: "policy-studio"
+    nirmata.io/component: "policy-studio"
+spec:
+  externalIPs: []
+  loadBalancerSourceRanges: []
+  type: "ClusterIP"
+  selector:
+    nirmata.io/service.name: "policy-studio"
+    nirmata.io/component: "policy-studio"
+  ports:
+  - port: 80
+    protocol: "TCP"
+    targetPort: 8080

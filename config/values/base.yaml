@@ -1,0 +1,161 @@
+# Base Values - Shared Configuration Across All Environments and Steps
+# This file contains common settings that are inherited by environment-specific and step-specific values files
+
+# Global configuration shared across all components
+global:
+  # Infrastructure settings
+  namespaceOverride: "nch-pe"
+  provider: "eks"
+  storageClassName: "gp3"
+  tenancyModel: "single"
+  
+  # Image registry configuration
+  common:
+    registry: "844333597536.dkr.ecr.us-west-1.amazonaws.com/nirmata"
+    tunnelServerAddress: "https://tunnel-0.tunnel:9090"
+    clusterIP: "None"
+    kubectlImage: "kubectl:1.30"
+  
+  # Image pull secrets (standardized name)
+  imagePullSecrets:
+    name: "image-registry"
+  
+  # Image registry configuration (empty by default, configure per environment)
+  imageRegistry:
+    server: ""
+    username: ""
+    password: ""
+  
+  # MongoDB base configuration (can be overridden per environment)
+  mongo:
+    hostedMongo: false
+    mongoDBServiceName: "mongodb-hs:27017"
+    mongoDBUsername: "admin"
+    mongoDBPassword: "MongoDBTest123"
+    mongoDBKeystorePassword: ""
+    mongoDBTruststorePassword: ""
+    authdb: "admin"
+
+  # Security defaults
+  security:
+    tls:
+      enabled: true
+    networkPolicies:
+      enabled: false
+      
+  # Resource defaults (can be overridden per environment)
+  resources:
+    defaults:
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+
+# MongoDB default configuration
+mongodb-chart:
+  resources:
+    limits:
+      memory: 4Gi
+    requests:
+      memory: 1Gi
+  volumeClaimTemplates:
+    spec:
+      resources:
+        requests:
+          storage: 30Gi
+  mongodbAgentUbi:
+    image:
+      name: mongodb-agent-ubi
+      tag: 108.0.4.8770-1
+      pullPolicy: IfNotPresent
+  mongodbKubernetesOperator:
+    image:
+      name: mongodb-kubernetes-operator
+      tag: 0.13.0
+      pullPolicy: IfNotPresent
+    resources:
+      limits:
+        cpu: 1100m
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 200Mi
+  versionUpgradeHookImage:
+    image:
+      name: mongodb-kubernetes-operator-version-upgrade-post-start-hook
+      tag: 1.0.10
+      pullPolicy: IfNotPresent
+  readinessProbeImage:
+    image:
+      name: mongodb-kubernetes-readinessprobe
+      tag: 1.0.23
+      pullPolicy: IfNotPresent
+  mongodbImage:
+    image:
+      name: mongodb-community-server
+      tag: "8.0.10"
+      pullPolicy: IfNotPresent
+  mongodbRepoUrl:
+    name: ""
+  image:
+    name: mongodb-community-server
+    tag: "8.0.10"
+    pullPolicy: IfNotPresent
+  imagesidecar:
+    name: mongodb-kubernetes-readinessprobe
+    tag: 1.0.23
+
+# Kafka default configuration
+kafka-chart:
+  resources:
+    limits:
+      memory: 2Gi
+    requests:
+      memory: 2Gi
+  volumeClaimTemplates:
+    spec:
+      resources:
+        requests:
+          storage: 10Gi
+
+# HAProxy default configuration
+haproxy-chart:
+  haproxy:
+    logLevel: "warn"
+    resources:
+      limits:
+        memory: "512Mi"
+        cpu: "100m"
+      requests:
+        memory: "100Mi"
+        cpu: "50m"
+    image:
+      name: "haproxy"
+      pullPolicy: "IfNotPresent"
+      tag: null
+    livenessProbe:
+      timeoutSeconds: 1
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+      tcpSocket:
+        port: 8443
+    readinessProbe:
+      timeoutSeconds: 1
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+      tcpSocket:
+        port: 8443
+    affinity: {}
+    tolerations:
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 20
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 20 

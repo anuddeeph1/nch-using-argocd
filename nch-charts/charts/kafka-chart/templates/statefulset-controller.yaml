@@ -1,0 +1,187 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations: {}
+  labels:
+    nirmata.io/service.name: kafka-controller
+    nirmata.io/statefulset.name: kafka-controller
+    nirmata.io/type: data
+  name: kafka-controller
+  namespace: {{ include "helmchart.namespace" . | quote }}
+spec:
+  podManagementPolicy: OrderedReady
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: kafka-controller
+      nirmata.io/service.name: kafka-controller
+      nirmata.io/statefulset.name: kafka-controller
+      nirmata.io/type: data
+  serviceName: kafka-controller
+  template:
+    metadata:
+      namespace: {{ include "helmchart.namespace" . | quote }}
+      labels:
+        app: kafka-controller
+        nirmata.io/service.name: kafka-controller
+        nirmata.io/statefulset.name: kafka-controller
+        nirmata.io/type: data
+    spec:
+{{- if ( gt ( int .Values.replicaCount ) 1 ) }}
+      affinity:
+{{ toYaml .Values.affinitycontroller | indent 8 }}
+{{- end}}
+      imagePullSecrets:
+      - name: {{ .Values.global.imagePullSecrets.name | default "registry-secret" }}
+      containers:
+      - env:
+        - name: KAFKA_HEAP_OPTS
+          value: -Xmx2048M -Xms2048M
+        - name: KAFKA_OPTS
+          value: -Dlogging.level=WARN
+        - name: JMX_PORT
+          value: "9010"
+        - name: CLUSTER_ID
+          value: lGGisPkQQbuVFLRgO20NZg
+        - name: NUM_CONTROLLERS
+          value: "{{ .Values.replicaCount }}"
+        - name: CONTROLLER_SERVICE
+          value: kafka-controller
+        - name: BROKER_SERVICE
+          value: kafka
+        - name: NAMESPACE
+          value: {{ include "helmchart.namespace" . }}
+        - name: SHARE_DIR
+          value: /var/lib/kafka
+        - name: NODE_TYPE
+          value: controller
+        image: "{{ .Values.global.common.registry }}/{{ .Values.image.name }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        name: k8skafka-controller
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+        ports:
+        - containerPort: 9093
+          name: controller
+          protocol: TCP
+        - containerPort: 9010
+          name: jmx
+          protocol: TCP
+        resources:
+{{ toYaml .Values.resourcescontroller | indent 10 }}
+        args:
+        - --override=auto.create.topics.enable=true
+        - --override=auto.leader.rebalance.enable=true
+        - --override=background.threads=10
+        - --override=broker.id.generation.enable=true
+        - --override=compression.type=producer
+        - --override=connections.max.idle.ms=600000
+        - --override=controlled.shutdown.enable=true
+        - --override=controlled.shutdown.max.retries=3
+        - --override=controlled.shutdown.retry.backoff.ms=5000
+        - --override=controller.socket.timeout.ms=30000
+        - --override=default.replication.factor=3
+        - --override=delete.topic.enable=false
+        - --override=fetch.purgatory.purge.interval.requests=1000
+        - --override=group.max.session.timeout.ms=300000
+        - --override=group.min.session.timeout.ms=6000
+        - --override=leader.imbalance.check.interval.seconds=300
+        - --override=leader.imbalance.per.broker.percentage=10
+        - --override=log.cleaner.backoff.ms=15000
+        - --override=log.cleaner.dedupe.buffer.size=134217728
+        - --override=log.cleaner.delete.retention.ms=86400000
+        - --override=log.cleaner.enable=true
+        - --override=log.cleaner.io.buffer.load.factor=0.9
+        - --override=log.cleaner.io.buffer.size=524288
+        - --override=log.cleaner.io.max.bytes.per.second=1.7976931348623157E308
+        - --override=log.cleaner.min.cleanable.ratio=0.5
+        - --override=log.cleaner.min.compaction.lag.ms=0
+        - --override=log.cleaner.threads=1
+        - --override=log.cleanup.policy=delete
+        - --override=log.dir=/var/lib/kafka
+        - --override=log.flush.interval.messages=9223372036854775807
+        - --override=log.flush.offset.checkpoint.interval.ms=60000
+        - --override=log.flush.scheduler.interval.ms=9223372036854775807
+        - --override=log.index.interval.bytes=4096
+        - --override=log.index.size.max.bytes=10485760
+        - --override=log.message.timestamp.difference.max.ms=9223372036854775807
+        - --override=log.message.timestamp.type=CreateTime
+        - --override=log.preallocate=false
+        - --override=log.retention.bytes=-1
+        - --override=log.retention.check.interval.ms=300000
+        - --override=log.retention.hours=2
+        - --override=log.roll.hours=2
+        - --override=log.roll.jitter.hours=0
+        - --override=log.segment.bytes=1073741824
+        - --override=log.segment.delete.delay.ms=60000
+        - --override=max.connections.per.ip=2147483647
+        - --override=message.max.bytes=1000012
+        - --override=min.insync.replicas=1
+        - --override=num.io.threads=8
+        - --override=num.network.threads=3
+        - --override=num.partitions=1
+        - --override=num.recovery.threads.per.data.dir=1
+        - --override=num.replica.fetchers=1
+        - --override=offset.metadata.max.bytes=4096
+        - --override=offsets.commit.required.acks=-1
+        - --override=offsets.commit.timeout.ms=5000
+        - --override=offsets.load.buffer.size=5242880
+        - --override=offsets.retention.check.interval.ms=600000
+        - --override=offsets.retention.minutes=1440
+        - --override=offsets.topic.compression.codec=0
+        - --override=offsets.topic.num.partitions=50
+        - --override=offsets.topic.replication.factor={{ .Values.replicaCount }}
+        - --override=offsets.topic.segment.bytes=104857600
+        - --override=producer.purgatory.purge.interval.requests=1000
+        - --override=queued.max.requests=500
+        - --override=quota.consumer.default=9223372036854775807
+        - --override=quota.producer.default=9223372036854775807
+        - --override=replica.fetch.backoff.ms=1000
+        - --override=replica.fetch.max.bytes=1048576
+        - --override=replica.fetch.min.bytes=1
+        - --override=replica.fetch.response.max.bytes=10485760
+        - --override=replica.fetch.wait.max.ms=500
+        - --override=replica.high.watermark.checkpoint.interval.ms=5000
+        - --override=replica.lag.time.max.ms=10000
+        - --override=replica.socket.receive.buffer.bytes=65536
+        - --override=replica.socket.timeout.ms=30000
+        - --override=request.timeout.ms=30000
+        - --override=reserved.broker.max.id=1000
+        - --override=socket.receive.buffer.bytes=102400
+        - --override=socket.request.max.bytes=104857600
+        - --override=socket.send.buffer.bytes=102400
+        - --override=unclean.leader.election.enable=true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /var/lib/kafka
+          name: kafka-controller-data-volume
+      dnsPolicy: ClusterFirst
+      priorityClassName: nirmata-data-critical
+      serviceAccountName: "kafka-service"
+      automountServiceAccountToken: false
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+  updateStrategy:
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - metadata:
+      name: kafka-controller-data-volume
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      dataSource: null
+      resources:
+        requests:
+          storage:  {{ .Values.controllerVolumeClaimTemplates.spec.resources.requests.storage }}
+{{- if .Values.global.storageClassName }}
+      storageClassName: {{ .Values.global.storageClassName }}
+{{- end }}
+      volumeMode: Filesystem

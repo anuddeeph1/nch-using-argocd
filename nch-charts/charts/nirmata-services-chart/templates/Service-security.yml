@@ -1,0 +1,26 @@
+{{- if .Values.users.enabled }}
+---
+apiVersion: "v1"
+kind: "Service"
+metadata:
+  name: "security"
+  namespace: {{ include "helmchart.namespace" . | quote }}
+  labels:
+    nirmata.io/deployment.name: security
+    nirmata.io/service.name: security
+    nirmata.io/type: app
+spec:
+  externalIPs: []
+  loadBalancerSourceRanges: []
+  sessionAffinity: "None"
+  type: "ClusterIP"
+  selector:
+    nirmata.io/deployment.name: security
+    nirmata.io/service.name: security
+    nirmata.io/type: app
+  ports:
+  - name: "https"
+    port: 443
+    protocol: "TCP"
+    targetPort: 8443
+{{- end }}

@@ -1,0 +1,817 @@
+# Default values for nirmata-services.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+postreq:
+  enabled: false
+
+prereq:
+  enabled: false
+
+base:
+  enabled: false
+
+others:
+  enabled: false
+
+# Global values that are used by shared as well as platform services
+global:
+  mongo:
+    hostedMongo: false
+    mongoDBServiceName: "mongodb-hs:27017"
+    mongoDBUsername: "admin"
+    mongoDBPassword: "MongoDBTest123"
+    mongoDBKeystorePassword:
+    mongoDBTruststorePassword:
+    authdb:
+  tenancyModel: "single"
+  common:
+    registry: 844333597536.dkr.ecr.us-west-1.amazonaws.com/nirmata
+    version: "4.22.0-rc1"
+    tunnelServerAddress: https://tunnel-0.tunnel:9090,https://tunnel-1.tunnel:9090
+    clusterIP: "None"
+    kubectlImage: kubectl:1.30
+
+  product:
+    # url: "devtest2.nirmata.co"
+    url: "onprem-nch.nirmata.co"
+    #product: "Enterprise"
+    product: "Policy Manager Enterprise"
+    productName: "PrivateEdition"
+    productVersion: ""
+  # Provider needs to be "openshift" in case of an openshift cluster to provide specific permissions
+  provider: "eks"
+  # If null, default storageclass is used, else the mentioned storageclass is used
+  storageClassName: gp3
+  # Specifies the specific namespace where all the resources are created
+  namespaceOverride: "nch-pe"
+  # env values for JVM
+  env:
+    JAVA_TOOL_OPTIONS:
+      value: "-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9999 \
+        -Dcom.sun.management.jmxremote.rmi.port=9999 -Dcom.sun.management.jmxremote.authenticate=false \
+        -Dcom.sun.management.jmxremote.ssl=false"
+    JAVA_OPTS:
+      value: "-XshowSettings:vm -XX:MaxRAMPercentage=70.0"
+  # needs to be changed if images arent used from ghcr.io/nirmata
+  imagePullSecrets:
+    name: amazon-ecr
+
+# Proxy values used in Nirmata configmap
+  proxy:
+    HTTPS_PROXY: null
+    HTTP_PROXY: null
+    https_proxy: null
+    http_proxy: null
+    no_proxy: null
+    NO_PROXY: null
+  secrethelm:
+    data:
+      tlscrt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUZIakNDQkFhZ0F3SUJBZ0lTQkNJQStsUE5STjBhMzBnVFZiMjdIZm5kTUEwR0NTcUdTSWIzRFFFQkN3VUEKTURJeEN6QUpCZ05WQkFZVEFsVlRNUll3RkFZRFZRUUtFdzFNWlhRbmN5QkZibU55ZVhCME1Rc3dDUVlEVlFRRApFd0pTTXpBZUZ3MHlNakV3TWpreE1URTRNVEphRncweU16QXhNamN4TVRFNE1URmFNQmN4RlRBVEJnTlZCQU1NCkRDb3VibWx5YldGMFlTNWpiekNDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQkFMTmMKcXNIaHY2cnFoK2ZGVDRiR0VkaHd3U3YyZlhvWGZoMkF1QzR2Y0w2UUJTa2dJajJrWUpZeDVmRjRoQVRrT213dgoyN3N6L0p2bnNMczZrbzRqZjhPRTJtN1VHdHpQQXA3Rlc2WlFUTW5ET0lESkx6MXB5RmIyT3pHQ3BHTDlFbE9KCmw3N2c1UEF2aDFmbEcrZEZnZ2VkaFZzckkrenNHZ3J1ai9TRzFlTXRneTdjeTNyU0g0RkVPeUowU1Q1L3JsUlgKM2g4NVdIY1ZBblpoSFhlZ3NMR1pVNDlHOFRocGpBUy83cmNabnNNWlRsSWJ2SW9lZ3JMeFVCVTh2c1l3WWdHdApUQkNYVFE1OTZESWQ5MHJKMFhBZldUUHFWbGdtVUU4WG0xQnJ5R0Rsc0lOekZVOWo4UFpoc2E0bkRVM0pXeUphCjFuK1hUaGV4cGdvZ3l0dVFLblVDQXdFQUFhT0NBa2N3Z2dKRE1BNEdBMVVkRHdFQi93UUVBd0lGb0RBZEJnTlYKSFNVRUZqQVVCZ2dyQmdFRkJRY0RBUVlJS3dZQkJRVUhBd0l3REFZRFZSMFRBUUgvQkFJd0FEQWRCZ05WSFE0RQpGZ1FVcGRXUms3ZFZGQkJDdDkwUXczZ1FnanI1R1hNd0h3WURWUjBqQkJnd0ZvQVVGQzZ6RjdkWVZzdXVVQWxBCjVoK3ZuWXNVd3NZd1ZRWUlLd1lCQlFVSEFRRUVTVEJITUNFR0NDc0dBUVVGQnpBQmhoVm9kSFJ3T2k4dmNqTXUKYnk1c1pXNWpjaTV2Y21jd0lnWUlLd1lCQlFVSE1BS0dGbWgwZEhBNkx5OXlNeTVwTG14bGJtTnlMbTl5Wnk4dwpGd1lEVlIwUkJCQXdEb0lNS2k1dWFYSnRZWFJoTG1Odk1Fd0dBMVVkSUFSRk1FTXdDQVlHWjRFTUFRSUJNRGNHCkN5c0dBUVFCZ3Q4VEFRRUJNQ2d3SmdZSUt3WUJCUVVIQWdFV0dtaDBkSEE2THk5amNITXViR1YwYzJWdVkzSjUKY0hRdWIzSm5NSUlCQkFZS0t3WUJCQUhXZVFJRUFnU0I5UVNCOGdEd0FIVUF0ejc3Sk4rY1RicDE4am5GdWxqMApiRjM4UXM5Nm56WEVuaDBKZ1NYdHRKa0FBQUdFSTYyaHZnQUFCQU1BUmpCRUFpQWZtMS9ScW91MXhHM28zSThxCkRJTGlOekpmbFpqZTFvMnhucTIzcnkvYkN3SWdKZU11Wmt0dTlkdkNNUXhCVFNPcU9QYlk2ZmpacmFxeTJicVUKMEo0NUxYSUFkd0RvUHREYVB2VUdOVExuVnlpOGlXdkpBOVBMMFJGcjdPdHA0WGQ5YlFhOWJnQUFBWVFqcmFHMApBQUFFQXdCSU1FWUNJUURFWjYxSlVtT1VBQTEvWHpCZjVhRFV1UTU1d0l2ZktRUFQ2K2hXS3A0MGFRSWhBTjErCkUwNHl5MlRPOHpVNVU1a2FVRGREQzJsR1EyZnFacHRsRm1QMDhabUlNQTBHQ1NxR1NJYjNEUUVCQ3dVQUE0SUIKQVFDRW1NVHIyYWhDdDdiNDZTa2x2b2VBelcweEg5NjFmd0xGNzg1cU1zWGhReWpueGlvaXJRQTVzdW1MQ1VjdQo1Rnc3MHBydW1PRGRvWmsvNG10NXFOalFzMHlhZDZmVjRWVk03dmlqckF1TkFHZ1dCZy9Oa2dlclJtTGwwT1d4CklTRklkeDQvbHBSb0k5Mkx3em0zY3FSdmh4amM3bXZTOVU3dmR3dzFSZDdkZTNzSzFrZlc2OENCdjJ6MzJsQUkKYU1DU3cxUW1hRzJ2SWRBTnRHV3JYYlBTV1BvZE5kUGlUZDdWL3VudkRZZ0phdHVyUTl1Vk4yclJvOEFwQlU3WgpnL0duS3V0bjUyUzZROXZBUkxtdFZXdHkreXcvOFVaZ2FhVDVTQmgxd29ZZUQzd3FjUkt6TERyazNyaitKcXpsCm55TkRsUEY1TElwSEpnNGZJTzc3TkVCUgotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCi0tLS0tQkVHSU4gQ0VSVElGSUNBVEUtLS0tLQpNSUlGRmpDQ0F2NmdBd0lCQWdJUkFKRXJDRXJQREJpblUvYldMaVduWDFvd0RRWUpLb1pJaHZjTkFRRUxCUUF3ClR6RUxNQWtHQTFVRUJoTUNWVk14S1RBbkJnTlZCQW9USUVsdWRHVnlibVYwSUZObFkzVnlhWFI1SUZKbGMyVmgKY21Ob0lFZHliM1Z3TVJVd0V3WURWUVFERXd4SlUxSkhJRkp2YjNRZ1dERXdIaGNOTWpBd09UQTBNREF3TURBdwpXaGNOTWpVd09URTFNVFl3TURBd1dqQXlNUXN3Q1FZRFZRUUdFd0pWVXpFV01CUUdBMVVFQ2hNTlRHVjBKM01nClJXNWpjbmx3ZERFTE1Ba0dBMVVFQXhNQ1VqTXdnZ0VpTUEwR0NTcUdTSWIzRFFFQkFRVUFBNElCRHdBd2dnRUsKQW9JQkFRQzdBaFVvelBhZ2xOTVBFdXlOVlpMRCtJTHhtYVo2UW9pblhTYXF0U3U1eFV5eHI0NXIrWFhJbzljUApSNVFVVlRWWGpKNm9vamtaOVlJOFFxbE9idlU3d3k3YmpjQ3dYUE5aT09mdHoybndXZ3NidnNDVUpDV0gramR4CnN4UG5IS3pobSsvYjVEdEZVa1dXcWNGVHpqVElVdTYxcnUyUDNtQnc0cVZVcTdadERwZWxRRFJySzlPOFp1dG0KTkh6NmE0dVBWeW1aK0RBWFhicHliL3VCeGEzU2hsZzlGOGZuQ2J2eEsvZUczTUhhY1YzVVJ1UE1yU1hCaUx4ZwpaM1Ztcy9FWTk2SmM1bFAvT29pMlI2WC9FeGpxbUFsM1A1MVQrYzhCNWZXbWNCY1VyMk9rLzVtems1M2NVNmNHCi9raUZIYUZwcmlWMXV4UE1VZ1AxN1ZHaGk5c1ZBZ01CQUFHamdnRUlNSUlCQkRBT0JnTlZIUThCQWY4RUJBTUMKQVlZd0hRWURWUjBsQkJZd0ZBWUlLd1lCQlFVSEF3SUdDQ3NHQVFVRkJ3TUJNQklHQTFVZEV3RUIvd1FJTUFZQgpBZjhDQVFBd0hRWURWUjBPQkJZRUZCUXVzeGUzV0ZiTHJsQUpRT1lmcjUyTEZNTEdNQjhHQTFVZEl3UVlNQmFBCkZIbTBXZVo3dHVYa0FYT0FDSWpJR2xqMjZadHVNRElHQ0NzR0FRVUZCd0VCQkNZd0pEQWlCZ2dyQmdFRkJRY3cKQW9ZV2FIUjBjRG92TDNneExta3ViR1Z1WTNJdWIzSm5MekFuQmdOVkhSOEVJREFlTUJ5Z0dxQVloaFpvZEhSdwpPaTh2ZURFdVl5NXNaVzVqY2k1dmNtY3ZNQ0lHQTFVZElBUWJNQmt3Q0FZR1o0RU1BUUlCTUEwR0N5c0dBUVFCCmd0OFRBUUVCTUEwR0NTcUdTSWIzRFFFQkN3VUFBNElDQVFDRnlrNUhQcVAzaFVTRnZOVm5lTEtZWTYxMVRSNlcKUFRObGNsUXRnYURxdyszNElMOWZ6TGR3QUxkdU8vWmVsTjdrSUorbTc0dXlBK2VpdFJZOGtjNjA3VGtDNTN3bAppa2ZtWlc0L1J2VFo4TTZVSys1VXpoSzhqQ2RMdU1HWUw2S3Z6WEdSU2dpM3lMZ2pld1F0Q1BrSVZ6NkQyUVF6CkNrY2hlQW1DSjhNcXlKdTV6bHp5Wk1qQXZubkFUNDV0UkF4ZWtyc3U5NHNRNGVnZFJDbmJXU0R0WTdraCtCSW0KbEpOWG9CMWxCTUVLSXE0UURVT1hvUmdmZnVEZ2hqZTFXckc5TUwrSGJpc3EveUZPR3dYRDlSaVg4RjZzdzZXNAphdkF1dkRzenVlNUwzc3o4NUsrRUM0WS93RlZETnZabzRUWVhhbzZaMGYrbFFLYzB0OERRWXprMU9YVnU4cnAyCnlKTUM2YWxMYkJmT0RBTFp2WUg3bjdkbzFBWmxzNEk5ZDFQNGpua0RyUW94QjNVcVE5aFZsM0xFS1E3M3hGMU8KeUs1R2hERFg4b1ZmR0tGNXUrZGVjSXNINFlhVHc3bVAzR0Z4SlNxdjMrMGxVRkpvaTVMYzVkYTE0OXA5MElkcwpoQ0V4cm9MMSs3bXJ5SWtYUGVGTTVUZ085cjBydlphQkZPdlYyejBncDM1WjArTDRXUGxidUVqTi9seFBGaW4rCkhsVWpyOGdSc0kzcWZKT1FGeS85cktJSlIwWS84T213dC84b1RXZ3kxbWRlSG1tams3ajFuWXN2QzlKU1E2WnYKTWxkbFRUS0IzemhUaFYxK1hXWXA2cmpkNUpXMXpiVldFa0xOeEU3R0pUaEVVRzNzemdCVkdQN3BTV1RVVHNxWApuTFJid0hPb3E3aEh3Zz09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0KLS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUZZRENDQkVpZ0F3SUJBZ0lRUUFGM0lUZlU2VUs0N25hcVBHUUt0ekFOQmdrcWhraUc5dzBCQVFzRkFEQS8KTVNRd0lnWURWUVFLRXh0RWFXZHBkR0ZzSUZOcFoyNWhkSFZ5WlNCVWNuVnpkQ0JEYnk0eEZ6QVZCZ05WQkFNVApEa1JUVkNCU2IyOTBJRU5CSUZnek1CNFhEVEl4TURFeU1ERTVNVFF3TTFvWERUSTBNRGt6TURFNE1UUXdNMW93ClR6RUxNQWtHQTFVRUJoTUNWVk14S1RBbkJnTlZCQW9USUVsdWRHVnlibVYwSUZObFkzVnlhWFI1SUZKbGMyVmgKY21Ob0lFZHliM1Z3TVJVd0V3WURWUVFERXd4SlUxSkhJRkp2YjNRZ1dERXdnZ0lpTUEwR0NTcUdTSWIzRFFFQgpBUVVBQTRJQ0R3QXdnZ0lLQW9JQ0FRQ3Q2Q1J6OUJRMzg1dWVLMWNvSEllKzNMZmZPSkNNYmp6bVY2QjQ5M1hDCm92NzFhbTcyQUU4bzI5NW9obXhFazdheFkvMFVFbXUvSDlMcU1ac2hmdEV6UExwSTlkMTUzN080L3hMeElacEwKd1lxR2NXbEtabVpzajM0OGNMK3RLU0lHOCtUQTVvQ3U0a3VQdDVsK2xBT2YwMGVYZkpsSUkxUG9PSzVQQ20rRApMdEZKVjR5QWRMYmFMOUE0alhzRGNDRWJkZkl3UFBxUHJ0M2FZNnZyRmsvQ2poRkxmczhMNlArMWR5NzBzbnRLCjRFd1NKUXh3alFNcG9PRlRKT3dUMmU0WnZ4Q3pTb3cvaWFOaFVkNnNod2VVOUdOeDdDN2liMXVZZ2VHSlhEUjUKYkhidk81QmllZWJicEpvdkpzWFFFT0VPM3RrUWpoYjd0L2VvOThmbEFnZVlqellJbGVmaU41WU5ObldlK3c1eQpzUjJidkFQNVNRWFlnZDBGdENyV1FlbXNBWGFWQ2cvWTM5VzlFaDgxTHlnWGJOS1l3YWdKWkhkdVJ6ZTZ6cXhaClhtaWRmM0xXaWNVR1FTaytXVDdkSnZVa3lSR25XcU5NUUI5R29abTFwenBSYm9ZN25uMXlweElGZUZudFBsRjQKRlFzRGo0M1FMd1d5UG50S0hFdHpCUkw4eHVyZ1VCTjhRNU4wczhwMDU0NGZBUWpRTU5SYmNUYTBCN3JCTURCYwpTTGVDTzVpbWZXQ0tvcU1wZ3N5NnZZTUVHNktEQTBHaDFnWHhHOEsyOEtoOGhqdEdxRWdxaU54Mm1uYS9IMnFsClBSbVA2emp6Wk43SUt3MEtLUC8zMitJVlF0UWkwQ2RkNFhuK0dPZHdpSzFPNXRtTE9zYmRKMUZ1Lzd4azlUTkQKVHdJREFRQUJvNElCUmpDQ0FVSXdEd1lEVlIwVEFRSC9CQVV3QXdFQi96QU9CZ05WSFE4QkFmOEVCQU1DQVFZdwpTd1lJS3dZQkJRVUhBUUVFUHpBOU1Ec0dDQ3NHQVFVRkJ6QUNoaTlvZEhSd09pOHZZWEJ3Y3k1cFpHVnVkSEoxCmMzUXVZMjl0TDNKdmIzUnpMMlJ6ZEhKdmIzUmpZWGd6TG5BM1l6QWZCZ05WSFNNRUdEQVdnQlRFcDdHa2V5eHgKK3R2aFM1QjEvOFFWWUlXSkVEQlVCZ05WSFNBRVRUQkxNQWdHQm1lQkRBRUNBVEEvQmdzckJnRUVBWUxmRXdFQgpBVEF3TUM0R0NDc0dBUVVGQndJQkZpSm9kSFJ3T2k4dlkzQnpMbkp2YjNRdGVERXViR1YwYzJWdVkzSjVjSFF1CmIzSm5NRHdHQTFVZEh3UTFNRE13TWFBdm9DMkdLMmgwZEhBNkx5OWpjbXd1YVdSbGJuUnlkWE4wTG1OdmJTOUUKVTFSU1QwOVVRMEZZTTBOU1RDNWpjbXd3SFFZRFZSME9CQllFRkhtMFdlWjd0dVhrQVhPQUNJaklHbGoyNlp0dQpNQTBHQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUFLY3dCc2xtNy9EbExRcnQyTTUxb0dyUytvNDQrL3lRb0RGVkRDCjVXeEN1MitiOUxSUHdrU0lDSFhNNndlYkZHSnVlTjdzSjdvNVhQV2lvVzVXbEhBUVU3Rzc1Sy9Rb3NNckFkU1cKOU1VZ05UUDUyR0UyNEhHTnRMaTFxb0pGbGNEeXFTTW81OWFoeTJjSTJxQkRMS29ia3gvSjN2V3JhVjBUOVZ1RwpXQ0xLVFZYa2NHZHR3bGZGUmpsQno0cFlnMWh0bWY1WDZEWU84QTRqcXYySWw5RGpYQTZVU2JXMUZ6WFNMcjlPCmhlOFk0SVdTNndZN2JDa2pDV0RjUlFKTUVoZzc2ZnNPM3R4RStGaVlydXE5UlVXaGlGMW15djRRNlcrQ3lCRkMKRGZ2cDdPT0dBTjZkRU9NNCtxUjlzZGpvU1lLRUJwc3I2R3RQQVF3NGR5NzUzZWM1Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K 
+      tlskey: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2d0lCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktrd2dnU2xBZ0VBQW9JQkFRQ3pYS3JCNGIrcTZvZm4KeFUrR3hoSFljTUVyOW4xNkYzNGRnTGd1TDNDK2tBVXBJQ0k5cEdDV01lWHhlSVFFNURwc0w5dTdNL3liNTdDNwpPcEtPSTMvRGhOcHUxQnJjendLZXhWdW1VRXpKd3ppQXlTODlhY2hXOWpzeGdxUmkvUkpUaVplKzRPVHdMNGRYCjVSdm5SWUlIbllWYkt5UHM3Qm9LN28vMGh0WGpMWU11M010NjBoK0JSRHNpZEVrK2Y2NVVWOTRmT1ZoM0ZRSjIKWVIxM29MQ3htVk9QUnZFNGFZd0V2KzYzR1o3REdVNVNHN3lLSG9LeThWQVZQTDdHTUdJQnJVd1FsMDBPZmVneQpIZmRLeWRGd0gxa3o2bFpZSmxCUEY1dFFhOGhnNWJDRGN4VlBZL0QyWWJHdUp3MU55VnNpV3RaL2wwNFhzYVlLCklNcmJrQ3AxQWdNQkFBRUNnZ0VCQUpzL2ZIWHhCc3ZUME9ybU9GMjVsN3kyYkIyM2J3aDh5U2FVUWRlSUxKaGwKWkhJaVpFRGl4TTk4UlVIclJLcFBPZHBtMmxTQlBRZGRWZlhaVHYxRThOTzFiTFE5VnpzRTI0bTkzZ1Jvd081cQowYjkzWkRKT0c2Qlo1UWFIdys0Q2l4aFBvazhQcmxuUGFlREVhSkNYODJMUUQ1dklEWUtISWt1UURuNWpMME5BCnNFd0V5RHU5TC90WndZdm9wWHZIeitvOWkxMXhtVUt2V0xkMDJZK1BwV2w0MVNITHF1RFhlUExxTnFMeGYrOVcKOC8rMjJtOFBHODVFaDcrNHFSRGNpSVkvWXdvYnlGNDN0aWJZYzdIT3ZKaHkxNEo1UnZMOEpIbDJFQ3FoL2luQQpQNmJxMnNGZVZnREdPaG1zYVdrbEdobDFIOVcxRFM2WW5xangxRlI0WE1rQ2dZRUE0S1dTRXRoMkZRMUZjWHpnCllFZWpuRmNCdGYrT2NWcXhYbVVnLzFWZld4cmtOblNNV1d4ZHpwQk5Id3psOSs2c0tTc0F5ZXJhWjVrYzVKWm0KOGh5YnVQRTk0anZ1RGlJYVo1dmUrYUd2dVgwQ2IyM3drcmRvYlAraWRUZkxCU2UyT2JUL0tEaTdOQXQzNFNvRwovb1Z6NUFvMU01YXlKQmt2UWNqWW9CakY0ZThDZ1lFQXpHVWNocHhTNkc2cGhEaTFDYUI4U2hYQS8xY3B4RkNqCkdHT0tnUTRoazdleUllZEFPZitKWmhlTW0reHFMRDc3UUVFZEtJMU1Ncmx1cDBnUWdrOUhhVFk4WUI4RmRlK1gKcmRTNFlJS3EvaHpDdnNTdWIrVGEyR1FSK1hwekNMazVZdHowZ0REUjgrcUdNVHpNK3A3dUU5eVd4MHhXZ2E2TQozNzFTWlliZFRkc0NnWUJRejE2UGh1eGJRRTNsdUMwaWxVS21uNm5PNVdKQkpvVzlWaFdicEFOTVM0MGloYVJqCkdwZFlFaEtjQTlESjhrSmVBTWtrMldXOWRKZXZKdWRiV3EwdHh5SWl1cm8wdlZIUVNZTFpPNjl4d3lWWUhpMDMKS2VEWHJOR3M1dWdTTDZuZWNseURCSDFiQ0hFVVAwRUsxOGpMbEZ4MDlWV1pwTEdhTVh5emdwWFVZd0tCZ1FDTQozTW95QXg0b1Rjdko4Z0xpWlpZQ3dNZEhzbHg0alZJNWhyQjNqTE9iU0NnZHNXL1VDTVk2YzlSVnlUTEsxNFQwCm5XdG8vU2djZFN0TFlpRHVqWkNiYytOY0kwVHlLSE1TTzkzdHRWLyt6UGR4M2I2U0l0aW45UjltSGZ1VmNZR1oKSHNucVpycnJMUi9hWXhxcFJrcXhxWDdJVDFYMi9jTGNsMjlueFBCVHJRS0JnUURic1JqQmFPUTB4K0Z3SUFWdgpnZk1pdDV0enhKcHlFZkZOK0NBNGdZY0RPbHJLN0E5ajJKMWF2Zzlmbi9qb3laeXBKN3VOQ1RhZHNzV0Fpa1NnCno5M2tZMS96OUthYlRqdjN4aE5JNVZXcmpaTUp5c1R6N2JCc3FMZitFTUFuaUIrRkt0eVpSTWpaREtGMDFaS1oKR0VWOHVmUldnK1I3UytyQ3UyQzdjeUV6V0E9PQotLS0tLUVORCBQUklWQVRFIEtFWS0tLS0tCg== 
+
+  secretMongodbUri:
+    data:
+      MONGODB_URI: "bW9uZ29kYjovL3BvbGljeS1zdHVkaW86TW9uZ29EQlRlc3QxMjNAbW9uZ29kYi1ocy5zdGFnaW5nOjI3MDE3L3BvbGljeS1zdHVkaW8/YXV0aFNvdXJjZT1wb2xpY3ktc3R1ZGlvJmF1dGhNZWNoYW5pc209U0NSQU0tU0hBLTI1Ngo="
+  
+  imageRegistry:
+    server: 844333597536.dkr.ecr.us-west-1.amazonaws.com
+    username: "AWS"
+    password: eyJwYXlsb2FkIjoiMVplMEhQUUJ2V3FqZHV5enpaMDdPdUpxdzJYUmRHV0p0Y25qYUpvSnY2U3YrSjZweTRpM3lvZHphL2RDaENtSHZHdzJFbGlaUFZBVm8vTnNER0FUaWlzUDJwcEQvb1dHRzJqYkRaM0M1aW11MVh6WERJZTNDb1E0SW5SczgrY2NhR3lTcTJmaS8xOGJTdndyME5mM0xCcDk3YUhJYllFSlhkSE5qRVdscTFRRnBDNVNDSTRmQjV0cWMvT1JLY3BFVjZpYVRINjdDWTVzTUlxQVkreHppMFFJK09ycUVXVWdQclRHVVJBOUFQOWZkcS90VlRYU0NXWnlVcUI1VFVUeFNRYXV4MUxLZVpoUm1rOTZLM2NxRk9uai8yL0E3VEJaY1AwNDJGUmNOeDlZaS9TZnBMdEhndDVEZnpZRStVSkdiSG1GU1IxLzFHS3hJY04vd0FDV3ZUakZ5MmVGRkQ0U2tsWFdqZDBQaUwxaVR1emZ1SmQveUx2Qjk3TXFMSVM0VUxNTWYxNEVDdEVCc25UVkI1NEFiVmhicUE3YUZ5d0JabmovSUhkM240QmVqSEFROW85RWYxTXRRaVZvWGFqS2pIS05JNE1BZFJtamtITG5OVk5uWlI0TmIzbnRTNjhXVDZKUCswaFREc2RYWm8yaks0cm9nY3paYVRKOFRudkd6a1lNeXBoZXZYeitrQUdySUJIWmswbWFtb2ZtR3NRSmVUeTNWWlFiUkRuMUY4Y2J2OERwMi9IcDNsSTRKZmhETTI2L2sxM1VBTTJIbTEyM2FnRlpHWmczczBNbTZ0TmNaZVByelo4RHhrQk1oUk8rQjFOWFBGTnhjSFR1REN3dCswRTFCSjluNkwydTNsRkZGQVJIRkhMU0dWMktxM2lIYU9OcUlGTlc3cEp2ODlpSzU2WUZ3ZHo3ZlRESmFRZjdGRld5bWNvU3c0V1BpalJSRG5oMmwvT292QUJMS3dhNEM5OUdxanJwdjlJc0o1VXlnMkIzR0pDZ29yTDNXbTNuTytWQlBjMnFsZU9KWGM1dkJUUkRXMFRtbVl3dUdTVFpTMjdQRHRNUjBIRkUwRkYyU3NwQnJ0YmMySmlkaTRTcVNkUDN3S2ZrZ3RjcXI1aU9OVmZTUUROSW5lcHZralhyU0ZOVlVmdFp4UDBPaUFzQy9tUVBzMUZLLzl5TFlUVWlYWmwyUkFYOTZFeGgzZ3pxQ1VQWEkwWkM4ZmFKSWRtQTJZZU5FU3ZCOHRHajN2aFBxOGtrUE5OYll2RkpqeStEb1c3V294QUxrVEhMZlIrU0xLS1BsekxEbSszWE9zcjJHemtZYVd6dnpwV2MxTWJHVXowQlJ4bzFKdFYrcGJqWXkyak5VaW9YaGtUSiIsImRhdGFrZXkiOiJBUUVCQUhpakVGWEd3RjFjaXBWT2FjRzhxUm1Kb1ZCUGF5OExVVXZVOFJDVlYwWG9Id0FBQUg0d2ZBWUpLb1pJaHZjTkFRY0dvRzh3YlFJQkFEQm9CZ2txaGtpRzl3MEJCd0V3SGdZSllJWklBV1VEQkFFdU1CRUVERGVncFBreHNRRFpGRyt1eUFJQkVJQTd5aVBBK2VWLzRtejQ3ZWFteHVwMTIwbmg0ZkZyRGQ2SzJzZDM1a3BYU1hwcEhiR042TXZPWVczZStXZmw2bHRRZTRKQmJrTEhKN2c5UGpBPSIsInZlcnNpb24iOiIyIiwidHlwZSI6IkRBVEFfS0VZIiwiZXhwaXJhdGlvbiI6MTcyNTU1Nzg0M30=
+
+  clustersvcImageRegistry:
+  # set to true if you want to set these env variables in cluster service for image registry
+    set: false
+    name:
+    username:
+    password:
+
+prereq-chart:
+  policystudio:
+    pvc:
+      storageClass: ebs-sc-2a
+      storage: 1Gi
+
+# Default values for kafka-subchart can be overridden here 
+kafka-chart:
+  image:
+    name: kafka
+    pullPolicy: IfNotPresent
+    tag: "v3-3.7.1"
+  volumeClaimTemplates:
+    spec:
+      resources:
+        requests:
+          storage: 10Gi
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - namespaces: []
+        labelSelector:
+          matchLabels: {}
+          matchExpressions:
+          - key: "app"
+            operator: "In"
+            values:
+            - "kafka"
+        topologyKey: "kubernetes.io/hostname"
+
+  controllerVolumeClaimTemplates:
+    spec:
+      resources:
+        requests:
+          storage: 5Gi
+  replicaCount: 1
+  resources:
+    limits:
+      memory: 2Gi
+    requests:
+      memory: 2Gi
+  resourcescontroller:
+    limits:
+      memory: 1Gi
+    requests:
+      cpu: 0.5
+      memory: 1Gi
+  tolerations:
+  - key: "node.kubernetes.io/not-ready"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 20
+  - key: "node.kubernetes.io/unreachable"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 20
+  - effect: NoSchedule
+    key: kubernetes.aws.com/scalesetpriority
+    operator: Equal
+    value: spot
+
+# Default values for mongodb-subchart can be overridden here 
+mongodbchart:
+  image:
+    name: mongodb-community-server
+    tag: "8.0.10"
+    pullPolicy: IfNotPresent
+  imagesidecar:
+    name: mongodb-kubernetes-readinessprobe
+    tag: "1.0.23"
+    pullPolicy: IfNotPresent
+  mongodbRepoUrl:
+    name: "https://repo.mongodb.org/apt/ubuntu"
+  affinity: {}
+  tolerations: []
+
+  volumeClaimTemplates:
+    spec:
+      resources:
+        requests:
+          storage: 30Gi
+  replicaCount: 1
+  resources:
+    limits:
+      memory: 10Gi
+    requests:
+      memory: 4Gi
+
+nirmata-services-chart:
+# These are the default values for activity service and can be configured if required during helm install or upgrade
+  activity:
+    env:
+      JAVA_TOOL_OPTIONS:
+        value: null
+      JAVA_OPTS:
+        value: "-XX:+UnlockExperimentalVMOptions -XX:+UseContainerSupport\
+            \ -XX:MaxRAMFraction=2 -XshowSettings:vm"
+    livenessProbe:
+      initialDelaySeconds: 120
+      timeoutSeconds: 1
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+      httpGet:
+        path: "/activity/status"
+        port: 8443
+        scheme: "HTTPS"
+    readinessProbe:
+      initialDelaySeconds: 10
+      timeoutSeconds: 1
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+      httpGet:
+        path: "/activity/status"
+        port: 8443
+        scheme: "HTTPS"
+    logLevel: "warn"
+    replicas: 2
+    resources:
+      limits:
+        memory: "1Gi"
+      requests:
+        memory: "512Mi"
+    image:
+      name: activity
+      pullPolicy: IfNotPresent
+      tag: null
+    tolerations:
+    - effect: NoSchedule
+      key: kubernetes.aws.com/scalesetpriority
+      operator: Equal
+      value: spot
+
+  clusterprocessor:
+    env:
+      JAVA_TOOL_OPTIONS:
+        value: "-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9999 \
+          -Dcom.sun.management.jmxremote.rmi.port=9999 -Dcom.sun.management.jmxremote.authenticate=false \
+          -Dcom.sun.management.jmxremote.ssl=false"
+      JAVA_OPTS:
+        value: "-XshowSettings:vm -XX:MaxRAMPercentage=70.0 -Dnirmata.awssubscription.enable=true"
+    livenessProbe:
+      initialDelaySeconds: 60
+      timeoutSeconds: 5
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 5
+      httpGet:
+        path: "/cluster/status"
+        port: 8443
+        scheme: "HTTPS"
+    readinessProbe:
+      initialDelaySeconds: 180
+      timeoutSeconds: 5
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 5
+      httpGet:
+        path: "/cluster/status"
+        port: 8443
+        scheme: "HTTPS"
+    logLevel: "warn"
+    replicas: 2
+    affinity: {}
+    resources:
+      limits:
+        memory: "1Gi"
+      requests:
+        memory: "512Mi"
+    image:
+      name: cluster
+      pullPolicy: IfNotPresent
+      tag: ""
+
+  policiesprocessor:
+    env:
+      JAVA_TOOL_OPTIONS:
+        value: "-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9999 \
+          -Dcom.sun.management.jmxremote.rmi.port=9999 -Dcom.sun.management.jmxremote.authenticate=false \
+          -Dcom.sun.management.jmxremote.ssl=false"
+      JAVA_OPTS:
+        value: "-XX:InitialRAMPercentage=80.0 -XX:MinRAMPercentage=80.0 -XX:MaxRAMPercentage=80.0 -XshowSettings:VM -
+                Dquarkus.profile=prod -Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+    livenessProbe:
+      initialDelaySeconds: 60
+      timeoutSeconds: 5
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 5
+      httpGet:
+        path: "/policies/status"
+        port: 8443
+        scheme: "HTTPS"
+    readinessProbe:
+      initialDelaySeconds: 60
+      timeoutSeconds: 5
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 5
+      httpGet:
+        path: "/policies/status"
+        port: 8443
+        scheme: "HTTPS"
+    logLevel: "warn"
+    replicas: 1
+    affinity: {}
+    resources:
+      limits:
+        memory: "1Gi"
+      requests:
+        memory: "256Mi"
+    image:
+      name: policies
+      tag: null
+      pullPolicy: IfNotPresent
+    tolerations:
+    - key: "node.kubernetes.io/not-ready"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 20
+    - key: "node.kubernetes.io/unreachable"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 20
+    - effect: NoSchedule
+      key: kubernetes.aws.com/scalesetpriority
+      operator: Equal
+      value: spot
+
+# These are the default values for client-gateway service and can be configured if required during helm install or upgrade
+  clientgateway:
+    env:
+      JAVA_TOOL_OPTIONS:
+        value: null
+      JAVA_OPTS:
+        value: "-XX:InitialRAMPercentage=80.0 -XX:MinRAMPercentage=80.0 -XX:MaxRAMPercentage=80.0 -XshowSettings:VM -Dquarkus.profile=prod -Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+    livenessProbe:
+      initialDelaySeconds: 120
+      timeoutSeconds: 1
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+      httpGet:
+        path: "/client-gateway/status"
+        port: 8443
+        scheme: "HTTPS"
+    readinessProbe:
+      initialDelaySeconds: 10
+      timeoutSeconds: 1
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+      httpGet:
+        path: "/client-gateway/status"
+        port: 8443
+        scheme: "HTTPS"
+    logLevel: "warn"
+    replicas: 2
+    resources:
+      limits:
+        memory: "512Mi"
+      requests:
+        memory: "256Mi"
+    image:
+      name: client-gateway
+      pullPolicy: IfNotPresent
+      tag: null
+    tolerations:
+    - key: "node.kubernetes.io/not-ready"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 20
+    - key: "node.kubernetes.io/unreachable"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 20
+    - effect: NoSchedule
+      key: kubernetes.aws.com/scalesetpriority
+      operator: Equal
+      value: spot
+
+# These are the default values for gateway service and can be configured if required during helm install or upgrade
+  gatewayservice:
+    env:
+      JAVA_TOOL_OPTIONS:
+        value: null
+      JAVA_OPTS:
+        value: "-XshowSettings:vm"
+    logLevel: "warn"
+    replicas: 1
+    livenessProbe:
+      initialDelaySeconds: 120
+      timeoutSeconds: 1
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+      httpGet:
+        path: "/gateway-service/status"
+        port: 8443
+        scheme: "HTTPS"
+    readinessProbe:
+      initialDelaySeconds: 10
+      timeoutSeconds: 1
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+      httpGet:
+        path: "/gateway-service/status"
+        port: 8443
+        scheme: "HTTPS"
+    affinity: {}
+    resources:
+      limits:
+        memory: "1Gi"
+      requests:
+        memory: "256Mi"
+    image:
+      name: gateway-service
+      pullPolicy: IfNotPresent
+      tag: null
+    tolerations:
+        - key: "node.kubernetes.io/not-ready"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 20
+        - key: "node.kubernetes.io/unreachable"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 20
+        - effect: NoSchedule
+          key: kubernetes.aws.com/scalesetpriority
+          operator: Equal
+          value: spot
+
+
+# These are the default values for cluster service and can be configured if required during helm install or upgrade
+  cluster:
+    env:
+      GATEWAY_USENEW: 
+        value: "true"
+      ISNPMONLY: 
+        value: "true"
+      JAVA_TOOL_OPTIONS:
+        value: null
+      JAVA_OPTS:
+        value: "-XshowSettings:vm -XX:MaxRAMPercentage=70.0 -Dnirmata.awssubscription.enable=true"
+      REGISTRY_ADDRESS:
+        value: 844333597536.dkr.ecr.us-west-1.amazonaws.com
+      REGISTRY_USERNAME:
+        value: AWS
+      REGISTRY_PASSWORD:
+        value: eyJwYXlsb2FkIjoiMVplMEhQUUJ2V3FqZHV5enpaMDdPdUpxdzJYUmRHV0p0Y25qYUpvSnY2U3YrSjZweTRpM3lvZHphL2RDaENtSHZHdzJFbGlaUFZBVm8vTnNER0FUaWlzUDJwcEQvb1dHRzJqYkRaM0M1aW11MVh6WERJZTNDb1E0SW5SczgrY2NhR3lTcTJmaS8xOGJTdndyME5mM0xCcDk3YUhJYllFSlhkSE5qRVdscTFRRnBDNVNDSTRmQjV0cWMvT1JLY3BFVjZpYVRINjdDWTVzTUlxQVkreHppMFFJK09ycUVXVWdQclRHVVJBOUFQOWZkcS90VlRYU0NXWnlVcUI1VFVUeFNRYXV4MUxLZVpoUm1rOTZLM2NxRk9uai8yL0E3VEJaY1AwNDJGUmNOeDlZaS9TZnBMdEhndDVEZnpZRStVSkdiSG1GU1IxLzFHS3hJY04vd0FDV3ZUakZ5MmVGRkQ0U2tsWFdqZDBQaUwxaVR1emZ1SmQveUx2Qjk3TXFMSVM0VUxNTWYxNEVDdEVCc25UVkI1NEFiVmhicUE3YUZ5d0JabmovSUhkM240QmVqSEFROW85RWYxTXRRaVZvWGFqS2pIS05JNE1BZFJtamtITG5OVk5uWlI0TmIzbnRTNjhXVDZKUCswaFREc2RYWm8yaks0cm9nY3paYVRKOFRudkd6a1lNeXBoZXZYeitrQUdySUJIWmswbWFtb2ZtR3NRSmVUeTNWWlFiUkRuMUY4Y2J2OERwMi9IcDNsSTRKZmhETTI2L2sxM1VBTTJIbTEyM2FnRlpHWmczczBNbTZ0TmNaZVByelo4RHhrQk1oUk8rQjFOWFBGTnhjSFR1REN3dCswRTFCSjluNkwydTNsRkZGQVJIRkhMU0dWMktxM2lIYU9OcUlGTlc3cEp2ODlpSzU2WUZ3ZHo3ZlRESmFRZjdGRld5bWNvU3c0V1BpalJSRG5oMmwvT292QUJMS3dhNEM5OUdxanJwdjlJc0o1VXlnMkIzR0pDZ29yTDNXbTNuTytWQlBjMnFsZU9KWGM1dkJUUkRXMFRtbVl3dUdTVFpTMjdQRHRNUjBIRkUwRkYyU3NwQnJ0YmMySmlkaTRTcVNkUDN3S2ZrZ3RjcXI1aU9OVmZTUUROSW5lcHZralhyU0ZOVlVmdFp4UDBPaUFzQy9tUVBzMUZLLzl5TFlUVWlYWmwyUkFYOTZFeGgzZ3pxQ1VQWEkwWkM4ZmFKSWRtQTJZZU5FU3ZCOHRHajN2aFBxOGtrUE5OYll2RkpqeStEb1c3V294QUxrVEhMZlIrU0xLS1BsekxEbSszWE9zcjJHemtZYVd6dnpwV2MxTWJHVXowQlJ4bzFKdFYrcGJqWXkyak5VaW9YaGtUSiIsImRhdGFrZXkiOiJBUUVCQUhpakVGWEd3RjFjaXBWT2FjRzhxUm1Kb1ZCUGF5OExVVXZVOFJDVlYwWG9Id0FBQUg0d2ZBWUpLb1pJaHZjTkFRY0dvRzh3YlFJQkFEQm9CZ2txaGtpRzl3MEJCd0V3SGdZSllJWklBV1VEQkFFdU1CRUVERGVncFBreHNRRFpGRyt1eUFJQkVJQTd5aVBBK2VWLzRtejQ3ZWFteHVwMTIwbmg0ZkZyRGQ2SzJzZDM1a3BYU1hwcEhiR042TXZPWVczZStXZmw2bHRRZTRKQmJrTEhKN2c5UGpBPSIsInZlcnNpb24iOiIyIiwidHlwZSI6IkRBVEFfS0VZIiwiZXhwaXJhdGlvbiI6MTcyNTU1Nzg0M30=
+    livenessProbe:
+      initialDelaySeconds: 60
+      timeoutSeconds: 5
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 5
+      httpGet:
+        path: "/cluster/status"
+        port: 8443
+        scheme: "HTTPS"
+    readinessProbe:
+      initialDelaySeconds: 60
+      timeoutSeconds: 5
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 5
+      httpGet:
+        path: "/cluster/status"
+        port: 8443
+        scheme: "HTTPS"
+    logLevel: "warn"
+    replicas: 2
+    affinity: {}
+    resources:
+      limits:
+        memory: "2Gi"
+      requests:
+        memory: "100Mi"
+    image:
+      name: cluster
+      pullPolicy: IfNotPresent
+      tag: null
+
+# These are the default values for policies service and can be configured if required during helm install or upgrade
+  policies:
+    env:
+      JAVA_TOOL_OPTIONS:
+        value: null
+      JAVA_OPTS:
+        value: "-Xmx6400M -Xms6400M -XshowSettings:VM"
+    livenessProbe:
+      initialDelaySeconds: 60
+      timeoutSeconds: 5
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 5
+      httpGet:
+        path: "/policies/status"
+        port: 8443
+        scheme: "HTTPS"
+    readinessProbe:
+      initialDelaySeconds: 60
+      timeoutSeconds: 5
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 5
+      httpGet:
+        path: "/policies/status"
+        port: 8443
+        scheme: "HTTPS"
+    logLevel: "warn"
+    replicas: 1
+    resources:
+      limits:
+        memory: "512Gi"
+      requests:
+        memory: "256Mi"
+    image:
+      name: policies
+      tag: null
+      pullPolicy: IfNotPresent
+    tolerations:
+    - key: "node.kubernetes.io/not-ready"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 20
+    - key: "node.kubernetes.io/unreachable"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 20
+    - effect: NoSchedule
+      key: kubernetes.aws.com/scalesetpriority
+      operator: Equal
+      value: spot
+
+# These are the default values for tunnel service and can be configured if required during helm install or upgrade
+  tunnel:
+    replicas: 1
+    affinity:
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+        - namespaces: []
+          labelSelector:
+            matchLabels: {}
+            matchExpressions:
+            - key: "nirmata.io/statefulset.name"
+              operator: "In"
+              values:
+              - "tunnel"
+          topologyKey: "kubernetes.io/hostname"
+    resources:
+      limits:
+        memory: "64Mi"
+      requests:
+        memory: "64Mi"
+    image:
+      name: nirmata-tunnel-server
+      pullPolicy: IfNotPresent
+      tag: null
+    tolerations:
+    - key: "node.kubernetes.io/not-ready"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 20
+    - key: "node.kubernetes.io/unreachable"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 20
+    - effect: NoSchedule
+      key: kubernetes.aws.com/scalesetpriority
+      operator: Equal
+      value: spot
+
+# These are the default values for webclient service and can be configured if required during helm install or upgrade
+  webclient:
+    env:
+      JAVA_TOOL_OPTIONS:
+        value: null
+      JAVA_OPTS:
+        value: "-XshowSettings:vm"
+    livenessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 1
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 5
+      httpGet:
+        path: "/webclient/"
+        port: 8443
+        scheme: "HTTP"
+    readinessProbe:
+      initialDelaySeconds: 10
+      timeoutSeconds: 1
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 5
+      httpGet:
+        path: "/webclient/"
+        port: 8443
+        scheme: "HTTP"
+    replicas: 1
+    affinity:
+      podAntiAffinity: {}
+    resources:
+      limits:
+        memory: "3Gi"
+      requests:
+        memory: "1Gi"
+    image:
+      name: webclient
+      pullPolicy: IfNotPresent
+      tag: null
+    tolerations:
+    - key: "node.kubernetes.io/not-ready"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 20
+    - key: "node.kubernetes.io/unreachable"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 20
+    - effect: NoSchedule
+      key: kubernetes.aws.com/scalesetpriority
+      operator: Equal
+      value: spot
+
+# These are the default values for policy-rag-db service and can be configured if required during helm install or upgrade
+  policystudio:
+    mongodb: 
+      username: "policy-studio"
+      password: "MongoDBTest123"
+    image:
+      name: policy-studio 
+      tag: null
+      pullPolicy: IfNotPresent
+    replicas: 1
+    resources:
+      limits:
+        memory: "1Gi"
+      requests:
+        memory: "256Mi"
+    affinity: {}
+    livenessProbe:
+      initialDelaySeconds: 120
+      timeoutSeconds: 1
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+      httpGet:
+        path: "/status"
+        port: 8080
+        scheme: "HTTP"
+    readinessProbe:
+      initialDelaySeconds: 10 
+      timeoutSeconds: 5
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 5
+      httpGet:
+        path: "/status"
+        port: 8080
+        scheme: "HTTP"
+    tolerations:
+    - key: "node.kubernetes.io/not-ready"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 20
+    - key: "node.kubernetes.io/unreachable"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 20
+    - effect: NoSchedule
+      key: kubernetes.aws.com/scalesetpriority
+      operator: Equal
+      value: spot
+
+
+haproxy-chart:
+# These are the default values for haproxy service and can be configured if required during helm install or upgrade
+  haproxy:
+    livenessProbe:
+      timeoutSeconds: 1
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+      tcpSocket:
+        port: 8443
+    readinessProbe:
+      timeoutSeconds: 1
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+      tcpSocket:
+        port: 8443
+    logLevel: "warn"
+    replicas: 1
+    affinity: {}
+    resources:
+      limits:
+        memory: "50Mi"
+      requests:
+        memory: "50Mi"
+    image:
+      name: haproxy
+      pullPolicy: IfNotPresent
+      tag: null
+    tolerations:
+    - key: "node.kubernetes.io/not-ready"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 20
+    - key: "node.kubernetes.io/unreachable"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 20
+    - effect: NoSchedule
+      key: kubernetes.aws.com/scalesetpriority
+      operator: Equal
+      value: spot
+
+users-chart:
+# These are the default values for users service and can be configured if required during helm install or upgrade
+  users:
+    env:
+      JAVA_TOOL_OPTIONS:
+        value: null
+      JAVA_OPTS:
+        value: "-XX:InitialRAMPercentage=80.0 -XX:MinRAMPercentage=80.0 -XX:MaxRAMPercentage=80.0 -XshowSettings:VM -Dquarkus.profile=prod -Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+    livenessProbe:
+      initialDelaySeconds: 120
+      timeoutSeconds: 1
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+      httpGet:
+        path: "/users/health"
+        port: 8443
+        scheme: "HTTPS"
+    readinessProbe:
+      initialDelaySeconds: 10
+      timeoutSeconds: 1
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+      httpGet:
+        path: "/users/health"
+        port: 8443
+        scheme: "HTTPS"
+    logLevel: "warn"
+    replicas: 1
+    affinity: {}
+    resources:
+      limits:
+        memory: "512Mi"
+      requests:
+        memory: "256Mi"
+    image:
+      name: users
+      pullPolicy: IfNotPresent
+      tag: null 
+    tolerations:
+    - key: "node.kubernetes.io/not-ready"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 20
+    - key: "node.kubernetes.io/unreachable"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 20
+    - effect: NoSchedule
+      key: kubernetes.aws.com/scalesetpriority
+      operator: Equal
+      value: spot
+
+# These are the default values for security service and can be configured if required during helm install or upgrade
+  security:
+    env:
+      JAVA_TOOL_OPTIONS:
+        value: null
+      JAVA_OPTS:
+        value: "-XshowSettings:vm -XX:MaxRAMPercentage=70.0 -Dnirmata.awssubscription.enable=true"
+    livenessProbe:
+      initialDelaySeconds: 120
+      timeoutSeconds: 1
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+      httpGet:
+        path: "/security/status"
+        port: 8443
+        scheme: "HTTPS"
+    readinessProbe:
+      initialDelaySeconds: 10
+      timeoutSeconds: 1
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+      httpGet:
+        path: "/security/status"
+        port: 8443
+        scheme: "HTTPS"
+    logLevel: "warn"
+    replicas: 2
+    affinity: {}
+    resources:
+      limits:
+        memory: "500Mi"
+      requests:
+        memory: "256Mi"
+    image:
+      name: security
+      pullPolicy: IfNotPresent
+      tag: null
+    tolerations:
+    - key: "node.kubernetes.io/not-ready"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 20
+    - key: "node.kubernetes.io/unreachable"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 20
+    - effect: NoSchedule
+      key: kubernetes.aws.com/scalesetpriority
+      operator: Equal
+      value: spot

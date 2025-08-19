@@ -1,0 +1,62 @@
+{{- if not .Values.global.mongo.hostedMongo }}
+apiVersion: mongodbcommunity.mongodb.com/v1
+kind: MongoDBCommunity
+metadata:
+  name: mongodb
+  namespace: {{ include "helmchart.namespace" . | quote }}
+spec:
+  members: {{ .Values.replicaCount }}
+  version: "{{ .Values.mongodbImage.image.tag }}"
+  featureCompatibilityVersion: "8.0"
+  type: ReplicaSet
+  security:
+    authentication:
+      modes: ["SCRAM"]
+  users:
+    - name: admin
+      db: admin
+      scramCredentialsSecretName: mongodb
+      passwordSecretRef:
+        name: mongodb-secret
+      roles:
+        - name: root
+          db: admin
+  statefulSet:
+    spec:
+      serviceName: mongodb
+      serviceAccountName: mongodb-database
+      selector:
+        matchLabels:
+          app: mongodb
+          nirmata.io/component: mongodb
+      template:
+        metadata:
+          labels:
+            app: mongodb
+            nirmata.io/component: mongodb
+        spec:
+{{- if ( gt ( int .Values.replicaCount ) 1 ) }}
+          affinity:
+{{ toYaml .Values.affinity | indent 8 }}
+{{- end}}
+          imagePullSecrets:
+          - name: {{ .Values.global.imagePullSecrets.name | default "registry-secret" }}
+          containers:
+            - name: mongod
+              resources:
+{{ toYaml .Values.resources | indent 10 }}
+      volumeClaimTemplates:
+        - metadata:
+            name: data-volume
+            labels:
+              app: "mongodb"
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: {{ .Values.volumeClaimTemplates.spec.resources.requests.storage }}
+{{- if .Values.global.storageClassName }}
+            storageClassName: {{ .Values.global.storageClassName }}
+{{- end }}
+            volumeMode: Filesystem
+{{- end }}

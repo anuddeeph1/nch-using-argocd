@@ -1,0 +1,27 @@
+# Step 1: Deploy Prerequisites Only (CRDs, ConfigMaps, Secrets)
+# This must be deployed first to install MongoDB CRDs
+# Usage: helm install -f values-base.yaml -f values-{dev|prod}.yaml -f values-step1-prereq.yaml
+
+# Step 1 specific overrides
+global:
+  # Force MongoDB CRD installation in Step 1 (regardless of hosted setting)
+  mongo:
+    hostedMongo: false  # Must be false to install CRDs
+  
+  # Step 1 specific product overrides (inherits URL from environment profile)
+  product:
+    productVersion: ""  # Empty for Step 1
+
+# Component enablement for Step 1
+prereq:
+  enabled: true
+
+# Disable all other components for step 1
+base:
+  enabled: false
+
+postreq:
+  enabled: false
+
+others:
+  enabled: false 

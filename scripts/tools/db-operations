@@ -1,0 +1,133 @@
+#!/bin/bash
+
+# Drop All User Databases in MongoDB
+# This script drops all user databases while preserving system databases
+# Usage: ./scripts/db-drop-all.sh [namespace]
+
+set -euo pipefail
+
+# Configuration
+NAMESPACE="${1:-nch-dev}"
+MONGODB_USERNAME="admin"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+log() { echo -e "${BLUE}[INFO]${NC} $*"; }
+success() { echo -e "${GREEN}[SUCCESS]${NC} $*"; }
+warning() { echo -e "${YELLOW}[WARNING]${NC} $*"; }
+error() { echo -e "${RED}[ERROR]${NC} $*"; }
+
+log "🗄️  MongoDB Database Cleanup Script"
+log "📁 Target namespace: $NAMESPACE"
+log "👤 MongoDB user: $MONGODB_USERNAME"
+
+# Prompt for MongoDB password securely
+echo -n "🔐 Enter MongoDB password for user '$MONGODB_USERNAME': "
+read -s MONGODB_PASSWORD
+echo ""
+
+if [[ -z "$MONGODB_PASSWORD" ]]; then
+    error "❌ Password cannot be empty"
+    exit 1
+fi
+
+# Get MongoDB pod
+log "🔍 Finding MongoDB pod..."
+MONGODB_POD=$(kubectl get pod -n "$NAMESPACE" -l app=mongodb -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+
+if [[ -z "$MONGODB_POD" ]]; then
+    error "❌ MongoDB pod not found in namespace $NAMESPACE"
+    exit 1
+fi
+
+success "📂 Found MongoDB pod: $MONGODB_POD"
+
+# Test connection first
+log "🧪 Testing MongoDB connection..."
+if ! kubectl exec "$MONGODB_POD" -n "$NAMESPACE" -c mongod -- mongosh \
+    --username "$MONGODB_USERNAME" \
+    --password "$MONGODB_PASSWORD" \
+    --authenticationDatabase admin \
+    --eval "db.runCommand('ping')" >/dev/null 2>&1; then
+    error "❌ Failed to connect to MongoDB - check your credentials"
+    exit 1
+fi
+
+success "✅ MongoDB connection successful"
+
+# List all databases first
+log "📋 Listing all databases..."
+kubectl exec "$MONGODB_POD" -n "$NAMESPACE" -c mongod -- mongosh \
+    --username "$MONGODB_USERNAME" \
+    --password "$MONGODB_PASSWORD" \
+    --authenticationDatabase admin \
+    --eval "db.adminCommand('listDatabases').databases.forEach(function(db) { print('  - ' + db.name + ' (' + (db.sizeOnDisk/1024/1024).toFixed(2) + ' MB)'); })" \
+    2>/dev/null
+
+echo ""
+warning "⚠️  This will DROP ALL user databases (system databases will be preserved)"
+warning "📊 System databases that will be kept: admin, config, local"
+echo ""
+
+# Confirm with user
+read -p "Are you sure you want to proceed? Type 'yes' to continue: " confirmation
+if [[ "$confirmation" != "yes" ]]; then
+    log "🛑 Operation cancelled"
+    exit 0
+fi
+
+echo ""
+log "🗑️  Dropping all user databases..."
+
+# MongoDB script to drop all non-system databases
+MONGO_SCRIPT='
+var systemDatabases = ["admin", "config", "local"];
+var databases = db.adminCommand("listDatabases").databases;
+var droppedCount = 0;
+var totalSize = 0;
+
+databases.forEach(function(database) {
+    if (systemDatabases.indexOf(database.name) === -1) {
+        print("🗑️  Dropping database: " + database.name + " (" + (database.sizeOnDisk/1024/1024).toFixed(2) + " MB)");
+        totalSize += database.sizeOnDisk;
+        db.getSiblingDB(database.name).dropDatabase();
+        droppedCount++;
+    }
+});
+
+print("✅ Dropped " + droppedCount + " databases");
+print("💾 Freed " + (totalSize/1024/1024).toFixed(2) + " MB of storage");
+'
+
+# Execute the drop script
+if kubectl exec "$MONGODB_POD" -n "$NAMESPACE" -c mongod -- mongosh \
+    --username "$MONGODB_USERNAME" \
+    --password "$MONGODB_PASSWORD" \
+    --authenticationDatabase admin \
+    --eval "$MONGO_SCRIPT" 2>/dev/null; then
+    
+    echo ""
+    success "🎉 Database cleanup completed successfully!"
+    
+    # Show remaining databases
+    log "📋 Remaining databases:"
+    kubectl exec "$MONGODB_POD" -n "$NAMESPACE" -c mongod -- mongosh \
+        --username "$MONGODB_USERNAME" \
+        --password "$MONGODB_PASSWORD" \
+        --authenticationDatabase admin \
+        --eval "db.adminCommand('listDatabases').databases.forEach(function(db) { print('  - ' + db.name); })" \
+        2>/dev/null
+        
+else
+    error "❌ Failed to drop databases"
+    exit 1
+fi
+
+echo ""
+success "🧹 MongoDB cleanup completed!"
+log "💡 Note: System databases (admin, config, local) were preserved"

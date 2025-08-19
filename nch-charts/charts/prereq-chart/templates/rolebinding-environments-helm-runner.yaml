@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: environments-helm-runner
+  namespace: {{ include "helmchart.namespace" . | quote }}
+subjects:
+- kind: ServiceAccount
+  name: environments-service
+  apiGroup: ""
+roleRef:
+  kind: Role
+  name: helm-runner
+  apiGroup: rbac.authorization.k8s.io

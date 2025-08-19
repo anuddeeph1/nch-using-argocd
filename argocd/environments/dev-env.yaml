@@ -1,0 +1,37 @@
+# Development Environment Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nch-dev-config
+  namespace: argocd
+data:
+  environment: "dev"
+  namespace: "nch-dev1"
+  helm-values: |
+    global:
+      namespaceOverride: "nch-dev1"
+      environment: "development"
+      resources:
+        defaults:
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+    mongodb-chart:
+      replicaCount: 1
+      resources:
+        limits:
+          memory: 2Gi
+        requests:
+          memory: 512Mi
+    kafka-chart:
+      replicaCount: 1
+    nirmata-services-chart:
+      activity:
+        replicas: 1
+      cluster:
+        replicas: 1
+      policies:
+        replicas: 1

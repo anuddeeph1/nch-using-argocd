@@ -1,0 +1,45 @@
+---
+apiVersion: "v1"
+kind: "Service"
+metadata:
+  name: "haproxy"
+  namespace: {{ include "helmchart.namespace" . | quote }}
+  labels:
+    nirmata.io/service.name: "haproxy"
+  {{- if .Values.haproxy.service.annotations }}
+  annotations:
+    {{- toYaml .Values.haproxy.service.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.haproxy.service.externalIPs }}
+  externalIPs: 
+    {{- toYaml .Values.haproxy.service.externalIPs | nindent 4 }}
+  {{- else }}
+  externalIPs: []
+  {{- end }}
+  externalTrafficPolicy: {{ .Values.haproxy.service.externalTrafficPolicy | default "Cluster" }}
+  {{- if .Values.haproxy.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+    {{- toYaml .Values.haproxy.service.loadBalancerSourceRanges | nindent 4 }}
+  {{- else }}
+  loadBalancerSourceRanges: []
+  {{- end }}
+  sessionAffinity: {{ .Values.haproxy.service.sessionAffinity | default "None" }}
+  type: {{ .Values.haproxy.service.type | default "NodePort" }}
+  selector:
+    nirmata.io/service.name: "haproxy"
+  ports:
+  - name: "https"
+    {{- if eq (.Values.haproxy.service.type | default "NodePort") "NodePort" }}
+    nodePort: {{ .Values.haproxy.service.httpsNodePort | default 30341 }}
+    {{- end }}
+    port: 443
+    protocol: "TCP"
+    targetPort: 8443
+  - name: "stats"
+    {{- if eq (.Values.haproxy.service.type | default "NodePort") "NodePort" }}
+    nodePort: {{ .Values.haproxy.service.statsNodePort | default 30343 }}
+    {{- end }}
+    port: 1936
+    protocol: "TCP"
+    targetPort: 1936

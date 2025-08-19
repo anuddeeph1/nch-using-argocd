@@ -1,0 +1,203 @@
+---
+kind: "Deployment"
+apiVersion: "apps/v1"
+metadata:
+  name: "activity"
+  namespace: {{ include "helmchart.namespace" . | quote }}
+  labels:
+    nirmata.io/deployment.name: "activity"
+    nirmata.io/service.name: "activity"
+    nirmata.io/type: "app"
+spec:
+  progressDeadlineSeconds: 600
+  replicas: {{ .Values.activity.replicas }}
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      nirmata.io/service.name: "activity"
+    matchExpressions: []
+  strategy:
+    type: "RollingUpdate"
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      namespace: {{ include "helmchart.namespace" . | quote }}
+      labels:
+        nirmata.io/deployment.name: "activity"
+        nirmata.io/service.name: "activity"
+        nirmata.io/type: "app"
+        {{- range .Values.activity.labels }}
+        {{- range $key, $value := . }}
+        {{ $key }}: {{ $value }}
+        {{- end }}
+        {{- end }}
+    spec:
+      serviceAccountName: "activity-service"
+      automountServiceAccountToken: false
+      restartPolicy: "Always"
+      terminationGracePeriodSeconds: 30
+      nodeSelector: {}
+      schedulerName: "default-scheduler"
+      priorityClassName: "nirmata-app-lower"
+      dnsPolicy: "ClusterFirst"
+      imagePullSecrets:
+      - name: {{ .Values.global.imagePullSecrets.name | default "registry-secret" }}
+      containers:
+      - name: "activity"
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+{{- if ( ne .Values.global.provider "openshift" ) }}
+          seccompProfile:
+            type: RuntimeDefault
+{{- end }}
+          capabilities:
+            drop:
+              - ALL
+{{- if .Values.activity.image.tag }}
+        image: "{{ .Values.global.common.registry }}/{{ .Values.activity.image.name }}:{{ .Values.activity.image.tag }}"
+{{- else }}
+        image: "{{ .Values.global.common.registry }}/{{ .Values.activity.image.name }}:{{ .Values.global.common.version }}"
+{{- end }}
+        command:
+        - java
+        - -jar
+        - /deployments/quarkus-run.jar
+        args: []
+        terminationMessagePath: "/dev/termination-log"
+        terminationMessagePolicy: "File"
+        imagePullPolicy: {{ .Values.activity.image.pullPolicy }}
+        ports:
+        - containerPort: 8443
+          protocol: "TCP"
+        env:
+{{ if .Values.global.mongo.hostedMongo }}
+  {{- if .Values.global.mongo.mongoDBKeystorePassword }}
+        - name: nirmata.mongodb.keystore
+          value: "/etc/ssl/mongo/keystore"
+        - name: nirmata.mongodb.keystore.password
+          valueFrom:
+            secretKeyRef:
+              name: mongo-keystore-credentials
+              key: password
+  {{- end }}
+  {{- if .Values.global.mongo.mongoDBTruststorePassword }}
+        - name: nirmata.mongodb.truststore
+          value: "/etc/ssl/mongo/truststore"
+        - name: nirmata.mongodb.truststore.password
+          valueFrom:
+            secretKeyRef:
+              name: mongo-truststore-credentials
+              key: password
+  {{- end }}
+        - name: nirmata.mongodb.user.username
+          valueFrom:
+            secretKeyRef:
+              name: mongo-credentials
+              key: username
+        - name: nirmata.mongodb.user.password
+          valueFrom:
+            secretKeyRef:
+              name: mongo-credentials
+              key: password
+        - name: nirmata.mongodb.authdb
+          value: {{ .Values.global.mongo.authdb}}
+{{ end }}
+        - name: "JAVA_TOOL_OPTIONS"
+{{- if .Values.activity.env.JAVA_TOOL_OPTIONS.value }}
+          value: {{ .Values.activity.env.JAVA_TOOL_OPTIONS.value }}
+{{- else }}
+          value: {{ .Values.global.env.JAVA_TOOL_OPTIONS.value }}
+{{- end }}
+        - name: "JAVA_OPTS"
+{{- if .Values.activity.env.JAVA_OPTS.value }}
+          value: {{ .Values.activity.env.JAVA_OPTS.value }}
+{{- else }}
+          value: {{ .Values.global.env.JAVA_OPTS.value }}
+{{- end }}
+        - name: "nirmata.environment.name"
+          valueFrom:
+            fieldRef:
+              apiVersion: "v1"
+              fieldPath: "metadata.namespace"
+        - name: "nirmata.instance.name"
+          valueFrom:
+            fieldRef:
+              apiVersion: "v1"
+              fieldPath: "metadata.name"
+        - name: "eureka.registration.enabled"
+          value: "false"
+        - name: "nirmata.service.dnsclient"
+          value: "true"
+        - name: "nirmata.zookeeper.address"
+          value: "zookeeper:2181"
+        - name: "nirmata.kafka.address"
+          value: "kafka:9092"
+        - name: "service.mongodb.seedSet"
+          value: {{ .Values.global.mongo.mongoDBServiceName }}
+        - name: "nirmata.activity.testmode"
+          value: "false"
+        - name: "nirmata.activity.retention.days"
+          value: "30"
+        - name: "service.logs.level"
+          value: {{ .Values.activity.logLevel | quote }}
+        - name: "HTTP_PROXY"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "HTTP_PROXY"
+        - name: "HTTPS_PROXY"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "HTTPS_PROXY"
+        - name: "NO_PROXY"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "NO_PROXY"
+        - name: "http_proxy"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "http_proxy"
+        - name: "https_proxy"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "https_proxy"
+        - name: "no_proxy"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "no_proxy"
+        livenessProbe:
+{{ toYaml .Values.activity.livenessProbe | indent 10 }}
+        readinessProbe:
+{{ toYaml .Values.activity.readinessProbe | indent 10 }}
+        volumeMounts:
+          - name: mongo-credentials
+            mountPath: /etc/mongo-credentials
+            readOnly: true
+          - mountPath: /etc/ssl/mongo
+            name: mongo-truststore-keystore
+        resources:
+{{ toYaml .Values.activity.resources | indent 10 }}
+      volumes:
+        - name: mongo-credentials
+          secret:
+            secretName: mongo-credentials
+            defaultMode: 420
+        - name: mongo-truststore-keystore
+          secret:
+            defaultMode: 420
+            secretName: mongo-truststore-keystore
+      securityContext:
+        supplementalGroups: []
+{{- if ( gt ( int .Values.activity.replicas ) 1 ) }}
+      affinity:
+{{ toYaml .Values.activity.affinity | indent 8 }}
+{{- end}}
+

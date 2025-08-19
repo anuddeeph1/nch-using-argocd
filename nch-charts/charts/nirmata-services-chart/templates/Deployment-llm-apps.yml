@@ -1,0 +1,98 @@
+---
+kind: "Deployment"
+apiVersion: "apps/v1"
+metadata:
+  annotations: {}
+  name: "llm-apps"
+  namespace: {{ include "helmchart.namespace" . | quote }}
+  labels:
+    nirmata.io/service.name: "llm-apps"
+    nirmata.io/component: "llm-apps"
+spec:
+  replicas: {{ .Values.llmapps.replicas }}
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      nirmata.io/service.name: "llm-apps"
+      nirmata.io/component: "llm-apps"
+    matchExpressions: []
+  strategy:
+    type: "RollingUpdate"
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      namespace: {{ include "helmchart.namespace" . | quote }}
+      labels:
+        nirmata.io/deployment.name: "llm-apps"
+        nirmata.io/service.name: "llm-apps"
+        nirmata.io/type: "app"
+        nirmata.io/component: "llm-apps"
+        {{- range .Values.llmapps.labels }}
+        {{- range $key, $value := . }}
+        {{ $key }}: {{ $value }}
+        {{- end }}
+        {{- end }}
+    spec:
+      serviceAccountName: "llm-apps"
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      nodeSelector: {}
+      priorityClassName: "nirmata-app-critical"
+      containers:
+      - name: "llm-apps"
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+{{- if ( ne .Values.global.provider "openshift" ) }}
+          seccompProfile:
+            type: RuntimeDefault
+{{- end }}
+          capabilities:
+            drop:
+              - ALL
+{{- if .Values.llmapps.image.tag }}
+        image: "{{ .Values.global.common.registry }}/{{ .Values.llmapps.image.name }}:{{ .Values.policies.image.tag }}"
+{{- else }}
+        image: "{{ .Values.global.common.registry }}/{{ .Values.llmapps.image.name }}:{{ .Values.global.common.version }}"
+{{- end }}
+        args:
+          - --bedrock-model 
+          - $(BEDROCK_MODEL)
+          - --bedrock-claude
+{{- if .Values.llmapps.debug }}
+          - --debug
+{{- end }}
+
+        ports:
+        - name: "https"
+          containerPort: 8443
+          protocol: "TCP"
+        env:
+        - name: BEDROCK_MODEL
+          value: {{ .Values.global.ai.bedrockInferenceProfile }}
+        - name: "nirmata.environment.name"
+          valueFrom:
+            fieldRef:
+              apiVersion: "v1"
+              fieldPath: "metadata.namespace"
+        - name: "nirmata.instance.name"
+          valueFrom:
+            fieldRef:
+              apiVersion: "v1"
+              fieldPath: "metadata.name"
+        resources:
+{{ toYaml .Values.llmapps.resources | indent 10 }}
+        livenessProbe:
+{{ toYaml .Values.llmapps.livenessProbe | indent 10 }}
+        readinessProbe:
+{{ toYaml .Values.llmapps.readinessProbe | indent 10 }}
+{{- if ( gt ( int .Values.llmapps.replicas ) 1 ) }}
+      affinity:
+{{ toYaml .Values.llmapps.affinity | indent 8 }}   
+{{- end}}  
+      imagePullSecrets:
+      - name: {{ .Values.global.imagePullSecrets.name | default "registry-secret" }}           
+      tolerations:
+{{ toYaml .Values.llmapps.tolerations | indent 8 }}

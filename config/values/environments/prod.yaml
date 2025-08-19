@@ -1,0 +1,268 @@
+# Production Environment Profile
+# Use with: helm install -f values-base.yaml -f values-prod.yaml -f values-stepX-xxx.yaml
+
+global:
+  # Production namespace
+  namespaceOverride: "nch-prod"
+  provider: "eks"
+  storageClassName: "gp3"
+  tenancyModel: "single"
+  
+  # Production image registry configuration
+  imageRegistry:
+    server: "844333597536.dkr.ecr.us-west-1.amazonaws.com"
+    username: ""  # Configure with registry username
+    password: ""  # Configure with registry password/token
+  
+  # Production-specific product configuration
+  product:
+    url: "onprem-prod-nch-external-mongodb.nirmata.co"  # Update with your production domain
+    product: "Enterprise"
+    productName: "PrivateEdition"
+    productVersion: "4.24.0-rc1"
+    isNchOnly: true
+  
+  # Production environment marker
+  environment: "production"
+  
+  # Production version aligned with current release
+  common:
+    version: "4.24.0-rc1"
+  
+  # AI configuration for LLM apps
+  ai:
+    bedrockInferenceProfile: "arn:aws:bedrock:us-west-2:844333597536:application-inference-profile/cpl55iltpz6n"
+  
+  # Production MongoDB settings (internal instance with HA)
+  mongo:
+    deployment:
+      internal: true
+      external: false
+    
+  # Production security settings (enhanced)
+  security:
+    tls:
+      enabled: true  # Enable TLS for production
+    networkPolicies:
+      enabled: true  # Enable network policies for security
+      
+  # Production resource limits (higher for performance)
+  resources:
+    defaults:
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+
+  # Step 5: Nirmata Configuration for Production
+  nirmataConfig:
+    license:
+      key: "sIUCD9EF3eExtPo8FWhEe4zdoDI8N0eh5Ato+KDtrYWXgsF/mQ3EsErcmYgxKpxWBHZbWKPVPKaT4pN0iA3QL1QhqAcFc2oSxhWmVEGCpWUmcGyo6WPoOS2wbqIiB+6dzxOgXGz3biN4SXxB4qYqrYQCZ7mXDSTzuHVDEDX4bB3S0M6iSH1OT0GT98/D1gzvx8JmzTNVxWY4LBWhnbfprBmNlurmDN0ETIbkEScApqazlyAi/UNysHl+YRBeUoxGm6BS4qaBc1VoC4AnopBzrA=="  # Update with production license
+      type: "production"
+    
+    tenant:
+      name: "anudeep.nalla@nirmata.com"  # Update with production admin
+      adminEmail: "anudeep.nalla@nirmata.com"
+      adminPassword: "Nirmata2013"  # Use secure password
+      companyName: "Nirmata"  # Update with your company name
+
+# Production MongoDB - 3 replicas for HA
+mongodb-chart:
+  replicaCount: 3
+  resources:
+    limits:
+      memory: 8Gi  # Increased for production workload
+    requests:
+      memory: 4Gi  # Increased for production workload
+  volumeClaimTemplates:
+    spec:
+      resources:
+        requests:
+          storage: 100Gi  # Increased for production data
+
+# Production Kafka - 3 replicas for HA
+kafka-chart:
+  replicaCount: 3
+  kafkaOperator:
+    replicaCount: 3  # Kafka operator also 3 replicas
+  resources:
+    limits:
+      memory: 4Gi  # Increased for production throughput
+    requests:
+      memory: 4Gi  
+  volumeClaimTemplates:
+    spec:
+      resources:
+        requests:
+          storage: 50Gi  # Increased for production data
+
+# Production HAProxy - 2 replicas for HA with LoadBalancer service
+haproxy-chart:
+  haproxy:
+    replicas: 2
+    logLevel: "info"  # Production logging level
+    resources:
+      limits:
+        memory: "1Gi"  # Increased for production load
+      requests:
+        memory: "512Mi"
+    
+    # Configure HAProxy service as LoadBalancer for AWS EKS
+    service:
+      type: "LoadBalancer"
+      externalTrafficPolicy: "Local"  # Better for source IP preservation
+      annotations:
+        # AWS Load Balancer Controller annotations for Application Load Balancer
+        service.beta.kubernetes.io/aws-load-balancer-type: "nlb"  # Network Load Balancer
+        service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "tcp"
+        service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+        service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+        # Optional: Specify subnets if needed
+        # service.beta.kubernetes.io/aws-load-balancer-subnets: "subnet-xxx,subnet-yyy"
+        # Optional: Add tags
+        service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags: "Environment=production,Application=nirmata"
+
+# Production Nirmata Services - 2 replicas each for HA
+nirmata-services-chart:
+  # Core services - 2 replicas each for high availability
+  activity:
+    replicaCount: 2
+    resources:
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+  
+  clientgateway:
+    replicaCount: 2
+    resources:
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+  
+  cluster:
+    replicaCount: 2
+    resources:
+      limits:
+        memory: "3Gi"  # Higher for cluster operations
+        cpu: "1500m"
+      requests:
+        memory: "2Gi"
+        cpu: "1000m"
+  
+  clusterprocessor:
+    replicaCount: 2
+    resources:
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+  
+  gateway:
+    replicaCount: 2
+    resources:
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+  
+  llmapps:
+    replicaCount: 2
+    resources:
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+  
+  policies:
+    replicaCount: 2
+    resources:
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+  
+  policieseventprocessor:
+    replicaCount: 2
+    resources:
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+  
+  policiesprocessor:
+    replicaCount: 2
+    resources:
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+  
+  policystudio:
+    replicaCount: 2
+    resources:
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+  
+  security:
+    replicaCount: 2
+    resources:
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+  
+  users:
+    replicaCount: 2
+    resources:
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+  
+  webclient:
+    replicaCount: 2
+    resources:
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+  
+  tunnel:
+    replicaCount: 2
+    resources:
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+      requests:
+        memory: "512Mi"
+        cpu: "250m" 

@@ -1,0 +1,14 @@
+{{- if not .Values.global.mongo.hostedMongo }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: mongodb-{{ include "helmchart.namespace" . }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: mongodb
+  namespace: {{ include "helmchart.namespace" . | quote }}
+{{- end }}

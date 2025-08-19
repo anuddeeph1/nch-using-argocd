@@ -1,0 +1,104 @@
+---
+kind: "Deployment"
+apiVersion: "apps/v1"
+metadata:
+  name: "policy-studio"
+  namespace: {{ include "helmchart.namespace" . | quote }}
+  labels:
+    nirmata.io/deployment.name: "policy-studio"
+    nirmata.io/service.name: "policy-studio"
+    nirmata.io/type: "app"
+    nirmata.io/component: "policy-studio"
+spec:
+  replicas: {{ .Values.policystudio.replicas }}
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      nirmata.io/service.name: "policy-studio"
+      nirmata.io/component: "policy-studio"
+    matchExpressions: []
+  strategy:
+    type: "Recreate"
+  template:
+    metadata:
+      annotations: {}
+      namespace: {{ include "helmchart.namespace" . | quote }}
+      labels:
+        nirmata.io/deployment.name: "policy-studio"
+        nirmata.io/service.name: "policy-studio"
+        nirmata.io/type: "app"
+        nirmata.io/component: "policy-studio"
+        {{- range .Values.policystudio.labels }}
+        {{- range $key, $value := . }}
+        {{ $key }}: {{ $value }}
+        {{- end }}
+        {{- end }}
+    spec:
+      securityContext:
+        fsGroup: 2000 
+      serviceAccountName: "policy-studio"
+      imagePullSecrets:
+      - name: {{ .Values.global.imagePullSecrets.name | default "registry-secret" }}
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      priorityClassName: "nirmata-app-lower"
+      containers:
+      - name: "policy-studio"
+{{- if .Values.cluster.image.tag }}
+        image: "{{ .Values.global.common.registry }}/{{ .Values.policystudio.image.name }}:{{ .Values.policystudio.image.tag }}"
+{{- else }}
+        image: "{{ .Values.global.common.registry }}/{{ .Values.policystudio.image.name }}:{{ .Values.global.common.version }}"
+{{- end }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+{{- if ( ne .Values.global.provider "openshift" ) }}
+          seccompProfile:
+            type: RuntimeDefault
+{{- end }}
+          capabilities:
+            drop:
+              - all
+        command: []
+        args: ["run"]
+        ports:
+        - containerPort: 8080
+          protocol: "TCP"
+        env: []
+        livenessProbe:
+{{ toYaml .Values.policystudio.livenessProbe | indent 10 }}
+        readinessProbe:
+{{ toYaml .Values.policystudio.readinessProbe | indent 10 }}
+        resources:
+{{ toYaml .Values.policystudio.resources | indent 10 }}
+        volumeMounts:
+        - name: mongodb-uri
+          readOnly: true
+          mountPath: "/mongo/"
+        - mountPath: /config.yaml
+          name: config-file
+          readOnly: true
+          subPath: config.yaml
+        - mountPath: /ai
+          name: ai-secrets
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: policy-studio-config
+        name: config-file
+      - name: ai-secrets
+        secret:
+          defaultMode: 420
+          secretName: policy-studio-ai
+      - name: mongodb-uri 
+        secret:
+          defaultMode: 420
+          secretName: mongodb-uri
+      securityContext:
+        supplementalGroups: []
+{{- if ( gt ( int .Values.policystudio.replicas ) 1 ) }}
+      affinity:
+{{ toYaml .Values.policystudio.affinity | indent 8 }}
+{{- end}}
+      tolerations:
+{{ toYaml .Values.policystudio.tolerations | indent 8 }}

@@ -1,0 +1,140 @@
+---
+kind: "Deployment"
+apiVersion: "apps/v1"
+metadata:
+  name: "haproxy"
+  namespace: {{ include "helmchart.namespace" . | quote }}
+  labels:
+    nirmata.io/deployment.name: "haproxy"
+    nirmata.io/service.name: "haproxy"
+    nirmata.io/type: "app"
+spec:
+  progressDeadlineSeconds: 2147483647
+  replicas: {{ .Values.haproxy.replicas }}
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      nirmata.io/deployment.name: "haproxy"
+      nirmata.io/service.name: "haproxy"
+      nirmata.io/type: "app"
+    matchExpressions: []
+  strategy:
+    type: "RollingUpdate"
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      namespace: {{ include "helmchart.namespace" . | quote }}
+      labels:
+        nirmata.io/deployment.name: "haproxy"
+        nirmata.io/service.name: "haproxy"
+        nirmata.io/type: "app"
+        {{- range .Values.haproxy.labels }}
+        {{- range $key, $value := . }}
+        {{ $key }}: {{ $value }}
+        {{- end }}
+        {{- end }}
+    spec:
+      serviceAccountName: "haproxy-service"
+      automountServiceAccountToken: false
+      restartPolicy: "Always"
+      terminationGracePeriodSeconds: 30
+      nodeSelector: {}
+      schedulerName: "default-scheduler"
+      priorityClassName: "nirmata-app-critical"
+      dnsPolicy: "ClusterFirst"
+      volumes:
+      - name: "cert"
+        secret:
+          secretName: "tls-certificate"
+          defaultMode: 420
+      - name: haproxy-config-volume
+        configMap:
+          defaultMode: 511
+          name: haproxy-nirmata-config
+      imagePullSecrets:
+      - name: {{ .Values.global.imagePullSecrets.name | default "registry-secret" }}
+      containers:
+      - name: "haproxy"
+{{- if .Values.haproxy.image.tag }}
+        image: "{{ .Values.global.common.registry }}/{{ .Values.haproxy.image.name }}:{{ .Values.haproxy.image.tag }}"
+{{- else }}
+        image: "{{ .Values.global.common.registry }}/{{ .Values.haproxy.image.name }}:{{ .Values.global.common.version }}"
+{{- end }}
+        command: []
+        args: []
+        terminationMessagePath: "/dev/termination-log"
+        terminationMessagePolicy: "File"
+        imagePullPolicy: {{ .Values.haproxy.image.pullPolicy }}
+        ports:
+        - name: "https"
+          containerPort: 8443
+          protocol: "TCP"
+        - name: "stats"
+          containerPort: 1936
+          protocol: "TCP"
+        env:
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: HAPROXY_GLOBAL_LOG_OPTION
+          value: "log stdout format raw local0 info"
+        - name: HAPROXY_DEFAULTS_LOG_OPTION
+          value: "option httplog"
+        - name: "service.logs.level"
+          value: {{ .Values.haproxy.logLevel | quote }}
+        - name: "HTTP_PROXY"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "HTTP_PROXY"
+        - name: "HTTPS_PROXY"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "HTTPS_PROXY"
+        - name: "NO_PROXY"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "NO_PROXY"
+        - name: "http_proxy"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "http_proxy"
+        - name: "https_proxy"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "https_proxy"
+        - name: "no_proxy"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "no_proxy"
+        volumeMounts:
+        - name: "cert"
+          mountPath: "/mnt/secrets"
+        - name: haproxy-config-volume
+          mountPath: /tmp/haproxy.cfg
+          subPath: haproxy.cfg
+        livenessProbe:
+{{ toYaml .Values.haproxy.livenessProbe | indent 10 }}
+        readinessProbe:
+{{ toYaml .Values.haproxy.readinessProbe | indent 10 }}
+        resources:
+{{ toYaml .Values.haproxy.resources | indent 10 }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+      securityContext:
+        supplementalGroups: []
+{{- if ( gt ( int .Values.haproxy.replicas ) 1 ) }}
+      affinity:
+{{ toYaml .Values.haproxy.affinity | indent 8 }}
+{{- end}}
+      tolerations:
+{{ toYaml .Values.haproxy.tolerations | indent 8 }}

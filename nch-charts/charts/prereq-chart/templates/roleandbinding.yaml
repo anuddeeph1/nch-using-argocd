@@ -1,0 +1,23 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: {{ include "helmchart.namespace" . }}
+  name: statefulset-deployment-reader
+rules:
+- apiGroups: ["apps"]
+  resources: ["statefulsets", "deployments"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: statefulset-deployment-reader-binding
+  namespace: {{ include "helmchart.namespace" . }}
+subjects:
+- kind: ServiceAccount
+  name: preinstallhook-service
+  namespace: {{ include "helmchart.namespace" . }}
+roleRef:
+  kind: Role
+  name: statefulset-deployment-reader 
+  apiGroup: rbac.authorization.k8s.io

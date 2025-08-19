@@ -1,0 +1,138 @@
+---
+kind: "Deployment"
+apiVersion: "apps/v1"
+metadata:
+  annotations: {}
+  name: "gateway-service"
+  namespace: {{ include "helmchart.namespace" . | quote }}
+  labels:
+    nirmata.io/deployment.name: "gateway-service"
+    nirmata.io/service.name: "gateway-service"
+    nirmata.io/type: "app"
+    nirmata.io/component: "gateway-service"
+    label: value
+spec:
+  replicas: {{ .Values.gatewayservice.replicas }} 
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      nirmata.io/service.name: "gateway-service"
+      nirmata.io/component: "gateway-service"
+    matchExpressions: []
+  strategy:
+    type: "RollingUpdate"
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      namespace: {{ include "helmchart.namespace" . | quote }}
+      annotations: {}
+      labels:
+        nirmata.io/deployment.name: "gateway-service"
+        nirmata.io/service.name: "gateway-service"
+        nirmata.io/type: "app"
+        nirmata.io/component: "gateway-service"
+        {{- range .Values.clientgateway.labels }}
+        {{- range $key, $value := . }}
+        {{ $key }}: {{ $value }}
+        {{- end }}
+        {{- end }}
+    spec:
+      serviceAccountName: "gateway-service"
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      imagePullSecrets:
+      - name: {{ .Values.global.imagePullSecrets.name | default "registry-secret" }}
+      priorityClassName: "nirmata-app-lower"
+      containers:
+      - name: "gateway-service"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - all
+{{- if ( ne .Values.global.provider "openshift" ) }}
+          seccompProfile:
+            type: RuntimeDefault
+{{- end }}
+{{- if .Values.gatewayservice.image.tag }}
+        image: "{{ .Values.global.common.registry }}/{{ .Values.gatewayservice.image.name }}:{{ .Values.gatewayservice.image.tag }}"
+{{- else }}
+        image: "{{ .Values.global.common.registry }}/{{ .Values.gatewayservice.image.name }}:{{ .Values.global.common.version }}"
+{{- end }}
+        command: []
+        args:
+        - -environmentName
+        - $(nirmata.environment.name)
+        ports:
+        - containerPort: 8443
+          protocol: "TCP"
+        env:
+        - name: "JAVA_TOOL_OPTIONS"
+{{- if .Values.gatewayservice.env.JAVA_TOOL_OPTIONS.value }}
+          value: {{ .Values.gatewayservice.env.JAVA_TOOL_OPTIONS.value }}
+{{- else }}
+          value: {{ .Values.global.env.JAVA_TOOL_OPTIONS.value }}
+{{- end }}
+        - name: "JAVA_OPTS"
+{{- if .Values.gatewayservice.env.JAVA_OPTS.value }}
+          value: {{ .Values.gatewayservice.env.JAVA_OPTS.value }}
+{{- else }}
+          value: {{ .Values.global.env.JAVA_OPTS.value }}
+{{- end }}
+        # - name: "JAVA_OPTS"
+        #   value: "-XshowSettings:vm"
+        - name: "nirmata.environment.name"
+          valueFrom:
+            fieldRef:
+              apiVersion: "v1"
+              fieldPath: "metadata.namespace"
+        - name: "eureka.registration.enabled"
+          value: "false"
+        - name: "nirmata.service.dnsclient"
+          value: "true"
+        - name: "nirmata.zookeeper.address"
+          value: "zookeeper:2181"
+        - name: "nirmata.kafka.address"
+          value: "kafka:9092"
+        - name: "service.logs.level"
+          value: {{ .Values.gatewayservice.logLevel | quote }}
+        - name: "HTTP_PROXY"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "HTTP_PROXY"
+        - name: "HTTPS_PROXY"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "HTTPS_PROXY"
+        - name: "NO_PROXY"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "NO_PROXY"
+        - name: "http_proxy"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "http_proxy"
+        - name: "https_proxy"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "https_proxy"
+        - name: "no_proxy"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "no_proxy"
+        livenessProbe:
+{{ toYaml .Values.gatewayservice.livenessProbe | indent 10 }}
+        readinessProbe:
+{{ toYaml .Values.gatewayservice.readinessProbe | indent 10 }}
+        resources:
+{{ toYaml .Values.gatewayservice.resources | indent 10 }}
+      tolerations:
+{{ toYaml .Values.gatewayservice.tolerations | indent 8 }}

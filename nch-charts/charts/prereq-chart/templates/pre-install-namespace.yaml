@@ -1,0 +1,6 @@
+{{- if not (lookup "v1" "Namespace" "" ( include "helmchart.namespace" . ) ) }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ include "helmchart.namespace" . | quote }}
+{{- end }}

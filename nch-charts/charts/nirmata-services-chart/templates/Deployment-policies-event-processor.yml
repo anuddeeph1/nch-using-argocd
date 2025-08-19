@@ -1,0 +1,202 @@
+---
+kind: "Deployment"
+apiVersion: "apps/v1"
+metadata:
+  annotations: {}
+  name: "policies-event-processor"
+  namespace: {{ include "helmchart.namespace" . | quote }}
+  labels:
+    nirmata.io/deployment.name: "policies-event-processor"
+    nirmata.io/service.name: "policies-event-processor"
+    nirmata.io/type: "app"
+    nirmata.io/component: "policies-event-processor"
+spec:
+  replicas: {{ .Values.policieseventprocessor.replicas }}
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      nirmata.io/service.name: "policies-event-processor"
+      nirmata.io/component: "policies-event-processor"
+    matchExpressions: []
+  strategy:
+    type: "RollingUpdate"
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      namespace: {{ include "helmchart.namespace" . | quote }}
+      labels:
+        nirmata.io/deployment.name: "policies-event-processor"
+        nirmata.io/service.name: "policies-event-processor"
+        nirmata.io/type: "app"
+        nirmata.io/component: "policies-event-processor"
+        {{- range .Values.policieseventprocessor.labels }}
+        {{- range $key, $value := . }}
+        {{ $key }}: {{ $value }}
+        {{- end }}
+        {{- end }}
+    spec:
+      serviceAccountName: "policies-event-processor-service"
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      nodeSelector: {}
+      priorityClassName: "nirmata-app-critical"
+{{- if ( gt ( int .Values.policieseventprocessor.replicas ) 1 ) }}
+      affinity:
+{{ toYaml .Values.policieseventprocessor.affinity | indent 8 }}   
+{{- end}}  
+      containers:
+      - name: "policies-event-processor"
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+{{- if ( ne .Values.global.provider "openshift" ) }}
+          seccompProfile:
+            type: RuntimeDefault
+{{- end }}
+          capabilities:
+            drop:
+              - ALL
+          runAsNonRoot: true
+{{- if .Values.policieseventprocessor.image.tag }}
+        image: "{{ .Values.global.common.registry }}/{{ .Values.policieseventprocessor.image.name }}:{{ .Values.policieseventprocessor.image.tag }}"
+{{- else }}
+        image: "{{ .Values.global.common.registry }}/{{ .Values.policieseventprocessor.image.name }}:{{ .Values.global.common.version }}"
+{{- end }}
+        command:
+          - "java"
+          - "-XX:MaxRAMPercentage=80.0"
+          - "-XshowSettings:VM"
+          - "-jar"
+          - "/deployments/quarkus-run.jar"
+        args: []
+        ports:
+        - name: "https"
+          containerPort: 8443
+          protocol: "TCP"
+        env:
+        - name: "nirmata.llm.apps.host"
+          value: "llm-apps:443"
+        - name: "nirmata.policies.event.processor"
+          value: "true"
+        - name: "nirmata.datapipeline.enabled"
+          value: {{ .Values.policieseventprocessor.env.nirmata_datapipeline_enabled.value | quote }}
+        # Always set basic MongoDB credentials regardless of hostedMongo
+        - name: nirmata.mongodb.user.username
+          valueFrom:
+            secretKeyRef:
+              name: mongo-credentials
+              key: username
+        - name: nirmata.mongodb.user.password
+          valueFrom:
+            secretKeyRef:
+              name: mongo-credentials
+              key: password
+        - name: nirmata.mongodb.authdb
+          value: {{ .Values.global.mongo.authdb }}
+        # Only set TLS-related settings for hosted MongoDB
+{{ if .Values.global.mongo.hostedMongo }}
+  {{- if .Values.global.mongo.mongoDBKeystorePassword }}
+        - name: nirmata.mongodb.keystore
+          value: "/etc/ssl/mongo/keystore"
+        - name: nirmata.mongodb.keystore.password
+          valueFrom:
+            secretKeyRef:
+              name: mongo-keystore-credentials
+              key: password
+  {{- end }}
+  {{- if .Values.global.mongo.mongoDBTruststorePassword }}
+        - name: nirmata.mongodb.truststore
+          value: "/etc/ssl/mongo/truststore"
+        - name: nirmata.mongodb.truststore.password
+          valueFrom:
+            secretKeyRef:
+              name: mongo-truststore-credentials
+              key: password
+  {{- end }}
+{{ end }}
+        - name: "nirmata.environment.name"
+          valueFrom:
+            fieldRef:
+              apiVersion: "v1"
+              fieldPath: "metadata.namespace"
+        - name: nirmata.instance.name
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: "JAVA_TOOL_OPTIONS"
+{{- if .Values.policieseventprocessor.env.JAVA_TOOL_OPTIONS.value }}
+          value: {{ .Values.policieseventprocessor.env.JAVA_TOOL_OPTIONS.value }}
+{{- else }}
+          value: {{ .Values.global.env.JAVA_TOOL_OPTIONS.value }}
+{{- end }}
+        - name: "JAVA_OPTS"
+{{- if .Values.policieseventprocessor.env.JAVA_OPTS.value }}
+          value: {{ .Values.policieseventprocessor.env.JAVA_OPTS.value }}
+{{- else }}
+          value: {{ .Values.global.env.JAVA_OPTS.value }}
+{{- end }}
+        - name: "eureka.registration.enabled"
+          value: "false"
+        - name: "nirmata.service.dnsclient"
+          value: "true"
+        - name: "service.mongodb.seedSet"
+          value: {{ .Values.global.mongo.mongoDBServiceName }}
+        - name: "nirmata.zookeeper.address"
+          value: "zookeeper:2181"
+        - name: "nirmata.kafka.address"
+          value: "kafka:9092"
+        - name: "service.logs.level"
+          value: {{ .Values.policieseventprocessor.logLevel | quote }}
+        - name: "nirmata.tunnelServer.address"
+          valueFrom:
+            configMapKeyRef:
+              key: "tunnelServerAddress"
+              name: "nirmata-config"
+        - name: "nirmata.gateway.address"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "nirmata.url"
+        - name: "nirmata.services.url"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "nirmata.url"
+        - name: "nirmata.product.version"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "productVersion"
+        - name: "nirmata.product.name"
+          valueFrom:
+            configMapKeyRef:
+              name: "nirmata-config"
+              key: "product"
+        volumeMounts:
+          - name: mongo-credentials
+            mountPath: /etc/mongo-credentials
+            readOnly: true
+          - mountPath: /etc/ssl/mongo
+            name: mongo-truststore-keystore
+        resources:
+{{ toYaml .Values.policieseventprocessor.resources | indent 10 }}
+        livenessProbe:
+{{ toYaml .Values.policieseventprocessor.livenessProbe | indent 10 }}
+        readinessProbe:
+{{ toYaml .Values.policieseventprocessor.readinessProbe | indent 10 }}
+      volumes:
+        - name: mongo-credentials
+          secret:
+            secretName: mongo-credentials
+            defaultMode: 420
+        - name: mongo-truststore-keystore
+          secret:
+            defaultMode: 420
+            secretName: mongo-truststore-keystore
+      imagePullSecrets:
+      - name: {{ .Values.global.imagePullSecrets.name | default "registry-secret" }}          
+      tolerations:
+{{ toYaml .Values.policieseventprocessor.tolerations | indent 8 }}

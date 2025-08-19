@@ -1,0 +1,17 @@
+# Step 4: Deploy HAProxy Load Balancer Only
+# Usage: helm install -f values-base.yaml -f values-{dev|prod}.yaml -f values-step4-haproxy.yaml
+# Prerequisites: Steps 1, 2 and 3 must be completed successfully
+
+# Enable HAProxy deployment
+postreq:
+  enabled: true
+
+# Disable other components for this step
+prereq:
+  enabled: false
+base:
+  enabled: false
+users:
+  enabled: false
+others:
+  enabled: false

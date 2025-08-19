@@ -1,0 +1,141 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations: {}
+  labels:
+    nirmata.io/service.name: tunnel
+    nirmata.io/statefulset.name: tunnel
+    nirmata.io/type: app
+  name: tunnel
+  namespace: {{ include "helmchart.namespace" . | quote }}
+spec:
+  podManagementPolicy: OrderedReady
+  replicas: {{ .Values.tunnel.replicas }}
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      nirmata.io/service.name: tunnel
+  serviceName: tunnel
+  template:
+    metadata:
+      namespace: {{ include "helmchart.namespace" . | quote }}
+      labels:
+        nirmata.io/service.name: tunnel
+        nirmata.io/statefulset.name: tunnel
+        nirmata.io/type: app
+    spec:
+{{- if ( gt ( int .Values.tunnel.replicas ) 1 ) }}
+      affinity:
+{{ toYaml .Values.tunnel.affinity | indent 8 }}
+{{- end}}
+      imagePullSecrets:
+      - name: {{ .Values.global.imagePullSecrets.name | quote }}
+      containers:
+      - args:
+        - -api
+        - tcp://$(NIRMATA_HOST_ADDRESS):9090
+        - -tcp
+        - $(NIRMATA_HOST_ADDRESS)
+        - -wss
+        - tcp://$(NIRMATA_HOST_ADDRESS):8443
+        - -path
+        - /tunnels
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+{{- if ( ne .Values.global.provider "openshift" ) }}
+          seccompProfile:
+            type: RuntimeDefault
+{{- end }}
+          capabilities:
+            drop:
+              - ALL
+        env:
+        - name: NIRMATA_HOST_ADDRESS
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: NIRMATA_ENVIRONMENT_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: HTTP_PROXY
+          valueFrom:
+            configMapKeyRef:
+              key: HTTP_PROXY
+              name: nirmata-config
+        - name: HTTPS_PROXY
+          valueFrom:
+            configMapKeyRef:
+              key: HTTPS_PROXY
+              name: nirmata-config
+        - name: NO_PROXY
+          valueFrom:
+            configMapKeyRef:
+              key: NO_PROXY
+              name: nirmata-config
+        - name: http_proxy
+          valueFrom:
+            configMapKeyRef:
+              key: http_proxy
+              name: nirmata-config
+        - name: https_proxy
+          valueFrom:
+            configMapKeyRef:
+              key: https_proxy
+              name: nirmata-config
+        - name: no_proxy
+          valueFrom:
+            configMapKeyRef:
+              key: no_proxy
+              name: nirmata-config
+{{- if .Values.tunnel.image.tag }}
+        image: "{{ .Values.global.common.registry }}/{{ .Values.tunnel.image.name }}:{{ .Values.tunnel.image.tag }}"
+{{- else }}
+        image: "{{ .Values.global.common.registry }}/{{ .Values.tunnel.image.name }}:{{ .Values.global.common.version }}"
+{{- end }}
+        imagePullPolicy: {{ .Values.tunnel.image.pullPolicy }}
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /api/tunnels
+            port: 9090
+            scheme: HTTPS
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: tunnel
+        ports:
+        - containerPort: 8443
+          name: wss
+          protocol: TCP
+        - containerPort: 9090
+          name: api
+          protocol: TCP
+        resources:
+{{ toYaml .Values.tunnel.resources | indent 10 }}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      priorityClassName: nirmata-app-critical
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      serviceAccountName: "tunnel-service"
+      automountServiceAccountToken: false
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoExecute
+        key: node.kubernetes.io/not-ready
+        operator: Exists
+        tolerationSeconds: 20
+      - effect: NoExecute
+        key: node.kubernetes.io/unreachable
+        operator: Exists
+        tolerationSeconds: 20
+  updateStrategy:
+    type: RollingUpdate
+

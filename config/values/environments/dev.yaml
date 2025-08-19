@@ -1,0 +1,239 @@
+# Development Environment Profile
+# Use with: helm install -f values-base.yaml -f values-dev.yaml -f values-stepX-xxx.yaml
+
+global:
+
+  namespaceOverride: "nch-dev1"
+  provider: "eks"
+  storageClassName: "gp3"
+  tenancyModel: "single"
+  
+  # Development image registry configuration
+  imageRegistry:
+    server: "844333597536.dkr.ecr.us-west-1.amazonaws.com"
+    username: ""  # ECR uses token-based auth, username can be empty
+    password: ""  # Configure with ECR token
+  # Development-specific product configuration
+  product:
+    url: "onprem-nch-external-mongodb.nirmata.co"
+    product: "Enterprise"
+    productName: "PrivateEdition"
+    productVersion: "4.24.0-rc1"
+    isNchOnly: true
+
+  nirmataConfig:
+    license:
+      key: "sIUCD9EF3eExtPo8FWhEe4zdoDI8N0eh5Ato+KDtrYWXgsF/mQ3EsErcmYgxKpxWBHZbWKPVPKaT4pN0iA3QL1QhqAcFc2oSxhWmVEGCpWUmcGyo6WPoOS2wbqIiB+6dzxOgXGz3biN4SXxB4qYqrYQCZ7mXDSTzuHVDEDX4bB3S0M6iSH1OT0GT98/D1gzvx8JmzTNVxWY4LBWhnbfprBmNlurmDN0ETIbkEScApqazlyAi/UNysHl+YRBeUoxGm6BS4qaBc1VoC4AnopBzrA=="
+      type: "development"
+    
+    tenant:
+      name: "damien@nirmata.com"
+      adminEmail: "damien@nirmata.com"
+      adminPassword: "Nirmata2013"
+      companyName: "Nirmata Platform"
+
+  ai:
+      bedrockInferenceProfile: "arn:aws:bedrock:us-west-2:844333597536:application-inference-profile/cpl55iltpz6n"
+ 
+  # Development environment marker
+  environment: "development"
+  
+  # Development version aligned with current release
+  common:
+    version: "4.24.0-rc1"
+  
+  # Development MongoDB settings (internal instance)
+  mongo:
+    # Override for development - use internal MongoDB
+    deployment:
+      internal: true
+      external: false
+    
+  # Development security settings (relaxed)
+  security:
+    tls:
+      enabled: false 
+    networkPolicies:
+      enabled: false
+      
+  # Development resource limits (lower for cost savings)
+  resources:
+    defaults:
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+
+  # Step 5: Nirmata Configuration for Development
+
+# Development-specific replica counts (minimal for dev)
+mongodb-chart:
+  replicaCount: 1
+  resources:
+    limits:
+      memory: 2Gi  # Reduced from 4Gi
+    requests:
+      memory: 512Mi  # Reduced from 1Gi
+  volumeClaimTemplates:
+    spec:
+      resources:
+        requests:
+          storage: 10Gi  # Reduced from 30Gi
+
+kafka-chart:
+  replicaCount: 1
+  resources:
+    limits:
+      memory: 2Gi 
+    requests:
+      memory: 2Gi  
+  volumeClaimTemplates:
+    spec:
+      resources:
+        requests:
+          storage: 5Gi  # Reduced from 10Gi
+
+haproxy-chart:
+  haproxy:
+    replicas: 1
+    logLevel: "debug"  # More verbose logging for development
+    resources:
+      limits:
+        memory: "256Mi"  # Reduced
+      requests:
+        memory: "64Mi"   # Reduced
+
+# Development-specific service configurations
+nirmata-services-chart:
+  # Development resource limits (reduced for cost savings)
+  activity:
+    replicas: 1
+    resources:
+      limits:
+        memory: "512Mi"
+        cpu: "200m"
+      requests:
+        memory: "100Mi"
+        cpu: "100m"
+  
+  clientgateway:
+    replicas: 1
+    resources:
+      limits:
+        memory: "512Mi"
+        cpu: "300m"
+      requests:
+        memory: "200Mi"
+        cpu: "150m"
+  
+  cluster:
+    replicas: 1
+    resources:
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+      requests:
+        memory: "256Mi"
+        cpu: "200m"
+  
+  gatewayservice:
+    replicas: 1
+    resources:
+      limits:
+        memory: "1Gi"
+        cpu: "400m"
+      requests:
+        memory: "256Mi"
+        cpu: "200m"
+  
+  clusterprocessor:
+    replicas: 1
+    resources:
+      limits:
+        memory: "2Gi"
+        cpu: "500m"
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+  
+  policies:
+    replicas: 1
+    resources:
+      limits:
+        memory: "1536Mi"
+        cpu: "400m"
+      requests:
+        memory: "400Mi"
+        cpu: "200m"
+  
+  policiesprocessor:
+    replicas: 1
+    resources:
+      limits:
+        memory: "1536Mi"
+        cpu: "500m"
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+  
+  policieseventprocessor:
+    replicas: 1
+    resources:
+      limits:
+        memory: "2Gi"
+        cpu: "500m"
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+  
+  security:
+    replicas: 1
+    resources:
+      limits:
+        memory: "512Mi"
+        cpu: "200m"
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+  
+  users:
+    replicas: 1
+    resources:
+      limits:
+        memory: "1Gi"
+        cpu: "300m"
+      requests:
+        memory: "256Mi"
+        cpu: "150m"
+  
+  webclient:
+    replicas: 1
+    resources:
+      limits:
+        memory: "512Mi"
+        cpu: "200m"
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+  
+  tunnel:
+    replicas: 1
+    resources:
+      limits:
+        memory: "512Mi"
+        cpu: "200m"
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+  
+  llmapps:
+    replicas: 1
+    resources:
+      limits:
+        memory: "1Gi"
+        cpu: "400m"
+      requests:
+        memory: "256Mi"
+        cpu: "200m" 

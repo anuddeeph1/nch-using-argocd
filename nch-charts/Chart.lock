@@ -1,0 +1,18 @@
+dependencies:
+- name: prereq-chart
+  repository: ""
+  version: 4.23.0-1
+- name: kafka-chart
+  repository: ""
+  version: v2-3.6.1
+- name: mongodb-chart
+  repository: ""
+  version: 8.0.10
+- name: nirmata-services-chart
+  repository: ""
+  version: 4.23.0-1
+- name: haproxy-chart
+  repository: ""
+  version: 4.23.0-1
+digest: sha256:45c489c24c63eda4dbe7e1db3fc0dc263489323d282890703107baf4d37497e7
+generated: "2025-07-23T10:52:34.807376-07:00"

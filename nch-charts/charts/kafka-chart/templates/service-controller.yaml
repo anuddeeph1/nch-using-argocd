@@ -1,0 +1,22 @@
+---
+apiVersion: "v1"
+kind: "Service"
+metadata:
+  name: "kafka-controller"
+  namespace: {{ include "helmchart.namespace" . | quote }}
+  labels:
+    app: "kafka-controller"
+spec:
+  clusterIP: "None"
+  externalIPs: []
+  loadBalancerSourceRanges: []
+  sessionAffinity: "None"
+  type: "ClusterIP"
+  selector:
+    app: "kafka-controller"
+  ports:
+  - name: "controller"
+    port: 9093
+    protocol: "TCP"
+    targetPort: 9093
+

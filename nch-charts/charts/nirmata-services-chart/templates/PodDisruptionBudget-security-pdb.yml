@@ -1,0 +1,15 @@
+{{- if .Values.users.enabled }}
+---
+apiVersion: "policy/v1"
+kind: "PodDisruptionBudget"
+metadata:
+  name: "security-pdb"
+  namespace: {{ include "helmchart.namespace" . | quote }}
+  labels: {}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      nirmata.io/service.name: "security"
+    matchExpressions: []
+{{- end }}
