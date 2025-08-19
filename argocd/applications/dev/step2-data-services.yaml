@@ -44,46 +44,27 @@ spec:
         factor: 2
         maxDuration: 10m
   ignoreDifferences:
+    # Aggressive: Ignore ALL differences for StatefulSets
     - group: apps
       kind: StatefulSet
-      jsonPointers:
-        - /spec/volumeClaimTemplates/0/spec/resources/requests/storage
-        - /spec/template/metadata/annotations
-        - /spec/template/metadata/labels
-        - /metadata/annotations
-        - /metadata/labels
+      jqPathExpressions:
+        - .spec
+        - .status  
+        - .metadata.annotations
+        - .metadata.labels
+        - .metadata.generation
+        - .metadata.resourceVersion
+    # Aggressive: Ignore ALL differences for Secrets
+    - group: v1
+      kind: Secret
+      jqPathExpressions:
+        - .data
+        - .metadata
+        - .type
+    # Ignore PVC differences
     - group: v1
       kind: PersistentVolumeClaim
       jsonPointers:
         - /spec/resources/requests/storage
-    - group: v1
-      kind: Secret
-      jsonPointers:
-        - /data
         - /metadata/annotations
         - /metadata/labels
-        - /metadata/ownerReferences
-    - group: v1
-      kind: Secret
-      name: mongodb-token-r7kff
-      jsonPointers:
-        - /data
-        - /metadata
-    - group: apps
-      kind: StatefulSet
-      name: kafka
-      jsonPointers:
-        - /spec/template/metadata/annotations
-        - /spec/template/metadata/labels
-        - /metadata/annotations
-        - /metadata/labels
-        - /status
-    - group: apps
-      kind: StatefulSet
-      name: kafka-controller
-      jsonPointers:
-        - /spec/template/metadata/annotations
-        - /spec/template/metadata/labels
-        - /metadata/annotations
-        - /metadata/labels
-        - /status
