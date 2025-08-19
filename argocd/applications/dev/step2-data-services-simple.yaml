@@ -5,14 +5,11 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/compare-options: IgnoreExtraneous
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: nch-charts
-  ignoreDifferences:
-    - group: v1
-      kind: Secret
-      name: mongodb-token-r7kff
   source:
     repoURL: https://github.com/anuddeeph1/nch-using-argocd.git
     targetRevision: HEAD
@@ -41,45 +38,39 @@ spec:
     syncOptions:
       - ServerSideApply=true
       - RespectIgnoreDifferences=true
-      - PrunePropagationPolicy=foreground
-      - PruneLast=true
+      - ApplyOutOfSyncOnly=true
+      - Replace=true
     retry:
       limit: 5
       backoff:
         duration: 5s
         factor: 2
         maxDuration: 10m
+    managedNamespaceMetadata:
+      labels: {}
+      annotations: {}
   ignoreDifferences:
-    # Aggressive: Ignore ALL differences for StatefulSets
-    - group: apps
-      kind: StatefulSet
-      jqPathExpressions:
-        - .spec
-        - .status  
-        - .metadata.annotations
-        - .metadata.labels
-        - .metadata.generation
-        - .metadata.resourceVersion
-    # Aggressive: Ignore ALL differences for Secrets
-    - group: v1
-      kind: Secret
-      jqPathExpressions:
-        - .data
-        - .metadata
-        - .type
-    # Ignore PVC differences
-    - group: v1
-      kind: PersistentVolumeClaim
-      jsonPointers:
-        - /spec/resources/requests/storage
-        - /metadata/annotations
-        - /metadata/labels
-    # Specifically ignore the problematic mongodb token
+    # Completely ignore the problematic mongodb token
     - group: v1
       kind: Secret
       name: mongodb-token-r7kff
-    # Ignore all service account tokens
+      jsonPointers:
+        - /
+    # Ignore all service account tokens completely
     - group: v1
       kind: Secret
       jqPathExpressions:
         - 'select(.type == "kubernetes.io/service-account-token")'
+    # And ignore StatefulSet storage and status
+    - group: apps
+      kind: StatefulSet
+      jsonPointers:
+        - /spec/volumeClaimTemplates/0/spec/resources/requests/storage
+        - /status
+        - /metadata/generation
+        - /metadata/resourceVersion
+    # And ignore PVC storage
+    - group: v1
+      kind: PersistentVolumeClaim
+      jsonPointers:
+        - /spec/resources/requests/storage
