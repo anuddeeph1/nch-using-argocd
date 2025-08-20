@@ -3,10 +3,6 @@ kind: Role
 metadata:
   namespace: {{ include "helmchart.namespace" . }}
   name: statefulset-deployment-reader
-  annotations:
-    "helm.sh/hook": pre-install
-    "helm.sh/hook-weight": "-9"
-    "helm.sh/hook-delete-policy": before-hook-creation
 rules:
 - apiGroups: ["apps"]
   resources: ["statefulsets", "deployments"]
@@ -17,10 +13,6 @@ kind: RoleBinding
 metadata:
   name: statefulset-deployment-reader-binding
   namespace: {{ include "helmchart.namespace" . }}
-  annotations:
-    "helm.sh/hook": pre-install
-    "helm.sh/hook-weight": "-8"
-    "helm.sh/hook-delete-policy": before-hook-creation
 subjects:
 - kind: ServiceAccount
   name: preinstallhook-service
