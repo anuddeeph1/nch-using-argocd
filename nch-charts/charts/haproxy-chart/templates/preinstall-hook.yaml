@@ -3,6 +3,7 @@ kind: Job
 metadata:
   annotations:
     "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-3"
     "helm.sh/hook-delete-policy": hook-succeeded
   name: others-check
   namespace: {{ include "helmchart.namespace" . | quote }}

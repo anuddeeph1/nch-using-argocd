@@ -38,22 +38,24 @@ spec:
     server: https://kubernetes.default.svc
     namespace: nch-dev1
   syncPolicy:
-    # Remove automated sync to troubleshoot
-    # automated:
-    #   prune: true
-    #   selfHeal: true
+    automated:
+      prune: true
+      selfHeal: true
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
       - RespectIgnoreDifferences=true
       - SkipDryRunOnMissingResource=true
       - PrunePropagationPolicy=foreground
+      - Replace=true
+      - Validate=false
+      - ApplyOutOfSyncOnly=true
     retry:
-      limit: 3
+      limit: 10
       backoff:
-        duration: 10s
+        duration: 5s
         factor: 2
-        maxDuration: 5m
+        maxDuration: 2m
   ignoreDifferences:
     # Aggressive: Ignore ALL differences for Secrets (like step2)
     - group: v1

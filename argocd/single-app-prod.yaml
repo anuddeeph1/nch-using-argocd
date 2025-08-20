@@ -47,12 +47,15 @@ spec:
       - RespectIgnoreDifferences=true
       - SkipDryRunOnMissingResource=true
       - PrunePropagationPolicy=foreground
+      - Replace=true
+      - Validate=false
+      - ApplyOutOfSyncOnly=true
     retry:
-      limit: 3
+      limit: 10
       backoff:
-        duration: 10s
+        duration: 5s
         factor: 2
-        maxDuration: 5m
+        maxDuration: 2m
   ignoreDifferences:
     # Aggressive: Ignore ALL differences for Secrets (like step2)
     - group: v1
