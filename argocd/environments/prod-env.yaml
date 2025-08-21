@@ -6,10 +6,10 @@ metadata:
   namespace: argocd
 data:
   environment: "prod"
-  namespace: "nch-pe"
+  namespace: "nch-prod"
   helm-values: |
     global:
-      namespaceOverride: "nch-pe"
+      namespaceOverride: "nch-prod"
       environment: "production"
       resources:
         defaults:
